@@ -93,9 +93,6 @@ backend/
 ├── integration/ # Integración
 └── contract/ # Contractuales
 
-markdown
-Copiar código
-
 ---
 
 ## ✅ Pruebas
