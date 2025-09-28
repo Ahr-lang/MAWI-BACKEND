@@ -12,7 +12,7 @@ const TENANTS = {
 
 const BASE_CONF = {
   host: process.env.DB_HOST,
-  port: Number(process.env.DB_PORT || 5432),
+  port: Number(process.env.DB_PORT),
   user: process.env.DB_USER,
   password: process.env.DB_PASS,
   ssl: useSSL,
