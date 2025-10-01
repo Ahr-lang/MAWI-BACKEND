@@ -1,4 +1,5 @@
 const { Pool } = require("pg");
+
 require("dotenv").config();
 
 const useSSL = process.env.DB_SSL === "require" ? { rejectUnauthorized: false } : false;
