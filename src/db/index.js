@@ -5,10 +5,10 @@ require("dotenv").config();
 const useSSL = process.env.DB_SSL === "require" ? { rejectUnauthorized: false } : false;
 
 const TENANTS = {
-  a: { database: process.env.DB_AGROMO },
-  b: { database: process.env.DB_BIOMO },
-  c: { database: process.env.DB_ROBO },
-  d: { database: process.env.DB_BACK },
+  agromo: { database: process.env.DB_AGROMO },
+  biomo: { database: process.env.DB_BIOMO },
+  robo: { database: process.env.DB_ROBO },
+  back: { database: process.env.DB_BACK },
 };
 
 const BASE_CONF = {
