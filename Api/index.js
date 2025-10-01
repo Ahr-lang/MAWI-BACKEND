@@ -3,6 +3,9 @@ require("dotenv").config();
 const express = require("express");
 const cors = require("cors");
 
+const swaggerUi = require("swagger-ui-express");
+const specs = require("./config/swagger");
+
 const passport = require("./handlers/auth");
 const userRoutes = require("./routes/user");
 const { connectDB } = require("./db");
@@ -21,6 +24,8 @@ async function startServer() {
     app.use(passport.initialize());
 
     app.use("/api", userRoutes);
+
+    app.use("/api-docs", swaggerUi.serve, swaggerUi.setup(specs));
 
     app.use((_req, res) => res.status(404).json({ error: "Not found" }));
 
