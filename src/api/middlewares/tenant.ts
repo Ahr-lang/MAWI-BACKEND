@@ -1,8 +1,8 @@
 // Importamos funciones de db/index.js
-const { getPool, getSequelize, TENANTS } = require("../../db/index");
+import { getPool, getSequelize, TENANTS } from "../../db/index";
 
 // Middleware para configurar el tenant (base de datos) basado en la ruta
-function useTenant(req, res, next) {
+function useTenant(req: any, res: any, next: any) {
   // Obtenemos el tenant de los parámetros de la ruta
   const { tenant } = req.params;
 
@@ -21,10 +21,10 @@ function useTenant(req, res, next) {
     // Pasamos al siguiente middleware
     next();
   } catch (err) {
-    console.error("[Tenant] Error setting DB:", err.message);
+    console.error("[Tenant] Error setting DB:", (err as Error).message);
     res.status(500).json({ error: "Failed to connect to tenant database" });
   }
 }
 
 // Exportamos el middleware
-module.exports = { useTenant };
+export { useTenant };

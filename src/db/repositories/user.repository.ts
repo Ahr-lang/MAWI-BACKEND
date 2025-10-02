@@ -1,24 +1,24 @@
 // Importamos bcrypt para verificar contraseñas
-const bcrypt = require("bcrypt");
+import bcrypt from "bcrypt";
 
 // Clase UserRepository para manejar operaciones de base de datos para usuarios
-class UserRepository {
+export default class UserRepository {
   // Método para encontrar un usuario por ID
-  static async findById(sequelize, id) {
+  static async findById(sequelize: any, id: number) {
     const User = sequelize.models.User;
     const user = await User.findByPk(id);
     return user ? { id: user.id, username: user.username } : null;
   }
 
   // Método para encontrar un usuario por nombre de usuario
-  static async findByUsername(sequelize, username) {
+  static async findByUsername(sequelize: any, username: string) {
     const User = sequelize.models.User;
     const user = await User.findOne({ where: { username: username.toLowerCase() } });
     return user ? { id: user.id, username: user.username, password_hash: user.password_hash } : null;
   }
 
   // Método para autenticar un usuario (verificar nombre de usuario y contraseña)
-  static async authenticateUser(sequelize, username, password) {
+  static async authenticateUser(sequelize: any, username: string, password: string) {
     const user = await this.findByUsername(sequelize, username);
     if (!user) return null;
 
@@ -29,12 +29,9 @@ class UserRepository {
   }
 
   // Método para crear un nuevo usuario
-  static async createUser(sequelize, username, passwordHash) {
+  static async createUser(sequelize: any, username: string, passwordHash: string) {
     const User = sequelize.models.User;
     const user = await User.create({ username, password_hash: passwordHash });
     return { id: user.id, username: user.username };
   }
 }
-
-// Exportamos la clase
-module.exports = UserRepository;

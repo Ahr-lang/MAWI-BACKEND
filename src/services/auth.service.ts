@@ -1,17 +1,18 @@
 // Importamos passport y estrategias de autenticación
-const passport = require("passport");
-const LocalStrategy = require("passport-local").Strategy;
-const { Strategy: JwtStrategy, ExtractJwt } = require("passport-jwt");
-const jwt = require("jsonwebtoken");
+import passport from "passport";
+import { Strategy as LocalStrategy } from "passport-local";
+import { Strategy as JwtStrategy, ExtractJwt } from "passport-jwt";
+import jwt from "jsonwebtoken";
 // Importamos el repositorio de usuarios
-const UserRepository = require("../db/repositories/user.repository");
+import UserRepository from "../db/repositories/user.repository.js";
 
 // Definimos constantes para JWT
-const JWT_SECRET = process.env.JWT_SECRET;
-const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN;
+const JWT_SECRET = process.env.JWT_SECRET || 'super_secret_jwt_key_replace_with_random_string_in_production';
+const JWT_EXPIRES_IN = process.env.JWT_EXPIRES_IN || '7d';
 
 // Función para firmar un token JWT
-function signToken(payload) {
+function signToken(payload: any): string {
+  // @ts-ignore
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 }
 
@@ -24,7 +25,7 @@ passport.use(
       passReqToCallback: true, // Pasamos req para acceder a sequelize
       session: false
     },
-    async (req, username, password, done) => {
+    async (req: any, username: string, password: string, done: any) => {
       try {
         // Obtenemos sequelize del req (seteado por middleware)
         const sequelize = req.sequelize;
@@ -48,9 +49,11 @@ const jwtOpts = {
   passReqToCallback: true
 };
 
+// @ts-ignore
 // Configuramos la estrategia JWT para verificar tokens
 passport.use(
-  new JwtStrategy(jwtOpts, async (req, payload, done) => {
+  // @ts-ignore
+  new JwtStrategy(jwtOpts, async (req: any, payload: any, done: any) => {
     try {
       // Verificamos que el tenant del token coincida con el de la ruta
       if (!payload.tenant || payload.tenant !== req.params.tenant) {
@@ -72,5 +75,5 @@ passport.use(
 );
 
 // Exportamos passport y signToken
-module.exports = passport;
-module.exports.signToken = signToken;
+export default passport;
+export { signToken };

@@ -1,8 +1,8 @@
 // Importamos DataTypes de Sequelize para definir tipos de datos
-const { DataTypes } = require("sequelize");
+import { DataTypes } from "sequelize";
 
 // Función que define el modelo de Usuario para una instancia de Sequelize
-function defineUserModel(sequelize) {
+function defineUserModel(sequelize: any) {
   // Definimos el modelo 'User' que representa la tabla 'users' en la base de datos
   const User = sequelize.define('User', {
     // Campo 'id': clave primaria, entero, se autoincrementa
@@ -39,4 +39,4 @@ function defineUserModel(sequelize) {
 }
 
 // Exportamos la función para usarla en otros archivos
-module.exports = defineUserModel;
+export default defineUserModel;

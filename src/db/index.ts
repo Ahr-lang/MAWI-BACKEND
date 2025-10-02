@@ -1,27 +1,28 @@
 // Importamos Pool de pg para conexiones directas y Sequelize para ORM
-const { Pool } = require("pg");
-const { Sequelize } = require("sequelize");
-const defineUserModel = require("./models/user.model");
+import { Pool } from 'pg';
+import { Sequelize } from 'sequelize';
+import defineUserModel from './models/user.model.js';
+import * as dotenv from 'dotenv';
 
-require("dotenv").config();
+dotenv.config();
 
 // Configuramos SSL si es requerido
 const useSSL = process.env.DB_SSL === "require" ? { rejectUnauthorized: false } : false;
 
 // Definimos los tenants (bases de datos por inquilino)
-const TENANTS = {
-  agromo: { database: process.env.DB_AGROMO },
-  biomo: { database: process.env.DB_BIOMO },
-  robo: { database: process.env.DB_ROBO },
-  back: { database: process.env.DB_BACK },
+const TENANTS: Record<string, { database: string }> = {
+  agromo: { database: process.env.DB_AGROMO || 'agromo' },
+  biomo: { database: process.env.DB_BIOMO || 'biomo' },
+  robo: { database: process.env.DB_ROBO || 'robo' },
+  back: { database: process.env.DB_BACK || 'back' },
 };
 
 // Configuración base para todas las conexiones
 const BASE_CONF = {
-  host: process.env.DB_HOST,
-  port: Number(process.env.DB_PORT),
-  user: process.env.DB_USER,
-  password: process.env.DB_PASS,
+  host: process.env.DB_HOST || 'localhost',
+  port: Number(process.env.DB_PORT) || 5432,
+  user: process.env.DB_USER || 'postgres',
+  password: process.env.DB_PASS || 'password',
   ssl: useSSL,
 };
 
@@ -30,7 +31,7 @@ const pools = new Map();
 const sequels = new Map();
 
 // Función para obtener un pool de conexiones para un tenant
-function getPool(tenant) {
+function getPool(tenant: string): Pool {
   const t = TENANTS[tenant];
   if (!t || !t.database) throw new Error(`Unknown tenant: ${tenant}`);
 
@@ -44,7 +45,7 @@ function getPool(tenant) {
 }
 
 // Función para obtener una instancia de Sequelize para un tenant
-function getSequelize(tenant) {
+function getSequelize(tenant: string): Sequelize {
   const t = TENANTS[tenant];
   if (!t || !t.database) throw new Error(`Unknown tenant: ${tenant}`);
 
@@ -53,7 +54,7 @@ function getSequelize(tenant) {
       host: BASE_CONF.host,
       port: BASE_CONF.port,
       dialect: 'postgres',
-      ssl: BASE_CONF.ssl,
+      ssl: BASE_CONF.ssl as any,
       logging: false,
     });
 
@@ -80,4 +81,4 @@ async function connectDB() {
 }
 
 // Exportamos las funciones y constantes
-module.exports = { getPool, getSequelize, connectDB, TENANTS };
+export { getPool, getSequelize, connectDB, TENANTS };

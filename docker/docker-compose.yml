@@ -1,6 +1,6 @@
 services:
   api:
-    build: .
+    build: ..
     image: mawi-backend:latest
     environment:
       - PORT=3000

@@ -1,12 +1,12 @@
 // Importamos bcrypt para hashear contraseñas
-const bcrypt = require("bcrypt");
+import bcrypt from "bcrypt";
 // Importamos el repositorio de usuarios
-const UserRepository = require("../db/repositories/user.repository");
+import UserRepository from "../db/repositories/user.repository.js";
 
 // Clase UserService para lógica de negocio de usuarios
-class UserService {
+export default class UserService {
   // Método para registrar un nuevo usuario
-  static async registerUser(sequelize, username, password) {
+  static async registerUser(sequelize: any, username: string, password: string) {
     // Validamos que username y password estén presentes
     if (!username || !password) {
       throw new Error("Username and password are required");
@@ -26,6 +26,3 @@ class UserService {
     return newUser;
   }
 }
-
-// Exportamos la clase
-module.exports = UserService;

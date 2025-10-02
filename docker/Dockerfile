@@ -8,15 +8,18 @@ WORKDIR /usr/src/app
 # Copy package.json and package-lock.json first to leverage Docker cache
 COPY package*.json ./
 
-# Install only production dependencies for smaller image
-RUN npm ci --only=production
+# Install all dependencies (including dev for build)
+RUN npm ci
 
-# Copy source
+# Copy source and config
 COPY . .
+
+# Build TypeScript
+RUN npm run build
 
 # Default port (overridable via environment)
 ENV PORT=3000
 EXPOSE 3000
 
 # Start the app
-CMD ["node", "src/server.js"]
+CMD ["node", "dist/server.js"]
