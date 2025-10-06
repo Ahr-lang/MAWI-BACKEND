@@ -154,7 +154,7 @@ Documentos adicionales (vacío).
 2. **Configurar .env**: Copiar `.env.example` y llenar DB creds/JWT.
 3. **DB Setup**: Asegurar DBs PostgreSQL existen (agromo, biomo, etc.).
 4. **Ejecutar**: `npm run dev` (desarrollo) o `npm start` (producción).
-5. **API Docs**: Visitar `http://localhost:3000/api-docs`.
+5. **API Docs**: En desarrollo: `http://localhost:3000/api-docs`. En producción: `https://api.ecoranger.org/api-docs`.
 
 ## Endpoints Principales
 

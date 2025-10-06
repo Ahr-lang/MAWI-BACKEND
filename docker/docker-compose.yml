@@ -17,6 +17,7 @@ services:
       - DB_ROBO=${DB_ROBO}
       - DB_BACK=${DB_BACK}
       - DB_SSL=${DB_SSL}
+      - SWAGGER_SERVER_URL=${SWAGGER_SERVER_URL}
     ports:
       - "3000:3000"
     restart: unless-stopped
