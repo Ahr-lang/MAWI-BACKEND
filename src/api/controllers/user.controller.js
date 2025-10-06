@@ -1,13 +1,13 @@
 // Importamos passport para autenticación
-import passport from "passport";
+const passport = require("passport");
 // Importamos signToken de auth.service
-import { signToken } from "../../services/auth.service";
+const { signToken } = require("../../services/auth.service");
 // Importamos UserService
-import UserService from "../../services/user.service";
+const UserService = require("../../services/user.service");
 
 // Función para asegurar que el usuario esté autenticado
-function ensureAuthenticated(req: any, res: any, next: any) {
-  passport.authenticate("jwt", { session: false }, (err: any, user: any) => {
+function ensureAuthenticated(req, res, next) {
+  passport.authenticate("jwt", { session: false }, (err, user) => {
     if (err) return res.status(401).json({ error: "Invalid token" });
     if (!user) return res.status(401).json({ error: "Unauthorized" });
     req.user = user;
@@ -16,7 +16,7 @@ function ensureAuthenticated(req: any, res: any, next: any) {
 }
 
 // Función para registrar un nuevo usuario
-async function register(req: any, res: any) {
+async function register(req, res) {
   // Obtenemos la instancia de Sequelize del tenant
   const sequelize = req.sequelize;
   const { username, password } = req.body || {};
@@ -31,7 +31,7 @@ async function register(req: any, res: any) {
       user: newUser,
       tenant: req.tenant
     });
-  } catch (err: any) {
+  } catch (err) {
     // Manejamos errores específicos
     if (err.message === "Username and password are required") {
       return res.status(400).json({ error: err.message });
@@ -45,8 +45,8 @@ async function register(req: any, res: any) {
 }
 
 // Función para iniciar sesión
-function login(req: any, res: any, next: any) {
-  passport.authenticate("local", { session: false }, (err: any, user: any, info: any) => {
+function login(req, res, next) {
+  passport.authenticate("local", { session: false }, (err, user, info) => {
     if (err) return next(err);
     if (!user) {
       return res.status(401).json({ error: info?.message || "Invalid credentials" });
@@ -65,7 +65,7 @@ function login(req: any, res: any, next: any) {
 }
 
 // Función para obtener información del usuario autenticado
-function me(req: any, res: any) {
+function me(req, res) {
   return res.json({
     authenticated: true,
     user: req.user,
@@ -74,9 +74,9 @@ function me(req: any, res: any) {
 }
 
 // Función para cerrar sesión
-function logout(_req: any, res: any) {
+function logout(_req, res) {
   return res.json({ message: "Logged out" });
 }
 
 // Exportamos las funciones
-export { ensureAuthenticated, register, login, me, logout };
+module.exports = { ensureAuthenticated, register, login, me, logout };

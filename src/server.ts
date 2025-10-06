@@ -6,10 +6,10 @@ console.log('Loaded JWT_SECRET:', process.env.JWT_SECRET);
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import swaggerUi from 'swagger-ui-express';
-import specs from './config/swagger.js';
-import passport from './services/auth.service.js';
-import userRoutes from './api/routes/user.routes.js';
-import { connectDB } from './db/index.js';
+import specs from './config/swagger';
+import passport from './services/auth.service';
+import userRoutes from './api/routes/user.routes';
+import { connectDB } from './db/index';
 
 const app = express();
 const PORT: string | number = process.env.PORT || 3000;

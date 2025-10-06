@@ -1,5 +1,5 @@
 // Importamos bcrypt para verificar contraseñas
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 
 // Clase UserRepository para manejar operaciones de base de datos para usuarios
 export default class UserRepository {

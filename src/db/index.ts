@@ -1,7 +1,7 @@
 // Importamos Pool de pg para conexiones directas y Sequelize para ORM
 import { Pool } from 'pg';
 import { Sequelize } from 'sequelize';
-import defineUserModel from './models/user.model.js';
+import defineUserModel from './models/user.model';
 import * as dotenv from 'dotenv';
 
 dotenv.config();

@@ -1,7 +1,7 @@
 // Importamos bcrypt para hashear contraseñas
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 // Importamos el repositorio de usuarios
-import UserRepository from "../db/repositories/user.repository.js";
+import UserRepository from "../db/repositories/user.repository";
 
 // Clase UserService para lógica de negocio de usuarios
 export default class UserService {
