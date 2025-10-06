@@ -17,7 +17,7 @@ const options = {
     servers: [
       {
         // URL del servidor de desarrollo
-        url: "http://localhost:3000/api",
+        url: "https://api.ecoranger.org",
         description: "Servidor de desarrollo",
       },
     ],
