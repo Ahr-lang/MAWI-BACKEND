@@ -14,12 +14,17 @@ const options = {
       // Descripción de la API
       description: "Documentación de la API de autenticación con Node.js, Express, Passport y JWT.",
     },
+    // Lista de servidores para mostrar en Swagger UI.
+    // Favor usar la variable de entorno SWAGGER_SERVER_URL para el server por defecto si existe.
     servers: [
       {
-        // URL del servidor de desarrollo
-        url: "https://api.ecoranger.org",
-        description: "Servidor de desarrollo",
+        url: process.env.SWAGGER_SERVER_URL || "http://localhost:3000/api",
+        description: "Local / dev server (or from SWAGGER_SERVER_URL env)"
       },
+      {
+        url: "https://api.ecoranger.org",
+        description: "Production server"
+      }
     ],
     components: {
       securitySchemes: {
