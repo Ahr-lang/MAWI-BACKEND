@@ -1,8 +1,9 @@
 // Importamos swagger-jsdoc para generar la documentación Swagger
 import swaggerJsdoc from "swagger-jsdoc";
+import path from "path";
 
 // Definimos las opciones de configuración para Swagger
-const options = {
+const options: any = {
   definition: {
     // Versión de OpenAPI
     openapi: "3.0.0",
@@ -80,7 +81,8 @@ const options = {
   },
   // Archivos donde buscar anotaciones Swagger (rutas, controladores, docs)
   // Durante desarrollo apuntamos a los archivos TypeScript fuente para feedback rápido
-  apis: ["../api/routes/*.ts", "../api/controllers/*.ts", "../api/docs/*.ts"],
+  // En producción el código suele estar compilado en `dist` — incluir ambos patrones
+  apis: [], // se rellena más abajo con rutas absolutas para ts/js
   // Mover las rutas definidas al interior de `definition` para que swagger-jsdoc las incluya
 };
 
@@ -227,11 +229,27 @@ const extraPaths = {
   }
 };
 
-// Generamos las especificaciones Swagger
-const specs: any = swaggerJsdoc(options);
+// NOTE: we will generate specs at the end after populating `options.apis`
 
-// Inyectamos extraPaths dentro de specs.paths si no existe ya
-specs.paths = Object.assign({}, extraPaths, (specs.paths || {}));
+// --- Ensure swagger-jsdoc scans TS during dev and compiled JS during production ---
+// Build absolute glob patterns covering both source (src) and compiled (dist) files.
+const projectRoot = path.resolve(__dirname, "..", "..");
+const tsGlobs = [
+  path.join(projectRoot, "src/api/routes/*.ts"),
+  path.join(projectRoot, "src/api/controllers/*.ts"),
+  path.join(projectRoot, "src/api/docs/*.ts"),
+];
+const jsGlobs = [
+  path.join(projectRoot, "dist/api/routes/*.js"),
+  path.join(projectRoot, "dist/api/controllers/*.js"),
+  path.join(projectRoot, "dist/api/docs/*.js"),
+];
 
-// Exportamos las especificaciones
-export default specs;
+// Prefer source TS files when they exist, but include compiled JS for production builds
+options.apis = tsGlobs.concat(jsGlobs);
+
+// Re-generate specs after adjusting apis
+const finalSpecs: any = swaggerJsdoc(options);
+finalSpecs.paths = Object.assign({}, extraPaths, (finalSpecs.paths || {}));
+// Export as default so imports (import specs from './config/swagger') continue to work
+export default finalSpecs;
