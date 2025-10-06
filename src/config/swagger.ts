@@ -29,6 +29,12 @@ const options = {
           scheme: "bearer",
           bearerFormat: "JWT",
         },
+        // Esquema de seguridad para API keys (x-api-key header)
+        apiKeyAuth: {
+          type: 'apiKey',
+          in: 'header',
+          name: 'x-api-key'
+        }
       },
       schemas: {
         // Esquema para credenciales de usuario (login/register)
@@ -60,12 +66,167 @@ const options = {
         },
       },
     },
+    // Requerimos apiKey por defecto (la API verifica x-api-key middleware)
+    security: [
+      {
+        apiKeyAuth: []
+      }
+    ],
   },
   // Archivos donde buscar anotaciones Swagger (rutas, controladores, docs)
-  apis: ["../api/routes/*.js", "../api/controllers/*.js", "../api/docs/*.js"],
+  // Durante desarrollo apuntamos a los archivos TypeScript fuente para feedback rápido
+  apis: ["../api/routes/*.ts", "../api/controllers/*.ts", "../api/docs/*.ts"],
+  // Mover las rutas definidas al interior de `definition` para que swagger-jsdoc las incluya
+};
+
+// Si quieres rutas predefinidas en el spec, añádelas dentro de definition.paths
+// (las dejamos definidas aquí y las inyectamos en specs.definition abajo si existen)
+const extraPaths = {
+  "/{tenant}/users/register": {
+    post: {
+      tags: ["Auth"],
+      summary: "Registrar un nuevo usuario",
+      parameters: [
+        {
+          in: "path",
+          name: "tenant",
+          required: true,
+          schema: {
+            type: "string",
+            enum: ["agromo", "biomo", "robo", "back"]
+          },
+          description: "Identificador del tenant (base de datos)"
+        }
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              $ref: "#/components/schemas/UserCredentials"
+            }
+          }
+        }
+      },
+      responses: {
+        201: {
+          description: "Usuario registrado exitosamente."
+        },
+        409: {
+          description: "El nombre de usuario ya existe."
+        }
+      }
+    }
+  },
+  "/{tenant}/users/login": {
+    post: {
+      tags: ["Auth"],
+      summary: "Iniciar sesión y obtener un token JWT",
+      parameters: [
+        {
+          in: "path",
+          name: "tenant",
+          required: true,
+          schema: {
+            type: "string",
+            enum: ["agromo", "biomo", "robo", "back"]
+          },
+          description: "Identificador del tenant"
+        }
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              $ref: "#/components/schemas/UserCredentials"
+            }
+          }
+        }
+      },
+      responses: {
+        200: {
+          description: "Inicio de sesión exitoso (token devuelto)",
+          content: {
+            "application/json": {
+              schema: {
+                $ref: "#/components/schemas/AuthResponse"
+              }
+            }
+          }
+        },
+        401: {
+          description: "Credenciales inválidas"
+        }
+      }
+    }
+  },
+  "/{tenant}/users/me": {
+    get: {
+      tags: ["Auth"],
+      summary: "Obtener información del usuario autenticado",
+      parameters: [
+        {
+          in: "path",
+          name: "tenant",
+          required: true,
+          schema: {
+            type: "string",
+            enum: ["agromo", "biomo", "robo", "back"]
+          },
+          description: "Identificador del tenant"
+        }
+      ],
+      security: [
+        {
+          bearerAuth: []
+        }
+      ],
+      responses: {
+        200: {
+          description: "Información del usuario autenticado."
+        },
+        401: {
+          description: "Token inválido o ausente."
+        }
+      }
+    }
+  },
+  "/{tenant}/users/logout": {
+    post: {
+      tags: ["Auth"],
+      summary: "Cerrar sesión (stateless)",
+      parameters: [
+        {
+          in: "path",
+          name: "tenant",
+          required: true,
+          schema: {
+            type: "string",
+            enum: ["agromo", "biomo", "robo", "back"]
+          },
+          description: "Identificador del tenant"
+        }
+      ],
+      security: [
+        {
+          bearerAuth: []
+        }
+      ],
+      responses: {
+        200: {
+          description: "Mensaje de cierre de sesión"
+        }
+      }
+    }
+  }
 };
 
 // Generamos las especificaciones Swagger
-const specs = swaggerJsdoc(options);
+const specs: any = swaggerJsdoc(options);
+
+// Inyectamos extraPaths dentro de specs.paths si no existe ya
+specs.paths = Object.assign({}, extraPaths, (specs.paths || {}));
+
 // Exportamos las especificaciones
 export default specs;

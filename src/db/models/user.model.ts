@@ -22,16 +22,23 @@ function defineUserModel(sequelize: any) {
       type: DataTypes.STRING,
       allowNull: false,
     },
-    // Campo 'lastActiveAt': fecha y hora de la última actividad del usuario (opcional, se puede inferir de logins)
-    lastActiveAt: {
+    // Campo 'lastAccess': fecha y hora del último acceso del usuario (mapea a la columna DB `lastaccess`)
+    lastAccess: {
       type: DataTypes.DATE,
       allowNull: true,
+      field: 'lastaccess',
+    },
+    // Campo 'lastLogin': fecha y hora del último login (mapea a la columna DB `lastlogin`)
+    lastLogin: {
+      type: DataTypes.DATE,
+      allowNull: true,
+      field: 'lastlogin',
     },
   }, {
     // Nombre de la tabla en la base de datos
     tableName: 'users',
-    // Habilitamos timestamps automáticos: createdAt y updatedAt
-    timestamps: true, // Esto añade createdAt y updatedAt automáticamente
+    // No usamos timestamps automáticos porque la tabla existente tiene columnas diferentes
+    timestamps: false,
   });
 
   // Retornamos el modelo definido

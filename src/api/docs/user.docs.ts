@@ -17,7 +17,7 @@
  *         required: true
  *         schema:
  *           type: string
- *           enum: [a, b, c, d]
+ *           enum: [agromo, biomo, robo, back]
  *         description: Identificador del tenant (base de datos)
  *     requestBody:
  *       required: true
@@ -44,7 +44,7 @@
  *         required: true
  *         schema:
  *           type: string
- *           enum: [a, b, c, d]
+ *           enum: [agromo, biomo, robo, back]
  *         description: Identificador del tenant
  *     requestBody:
  *       required: true
@@ -75,7 +75,7 @@
  *         required: true
  *         schema:
  *           type: string
- *           enum: [a, b, c, d]
+ *           enum: [agromo, biomo, robo, back]
  *     security:
  *       - bearerAuth: []
  *     responses:
@@ -97,7 +97,7 @@
  *         required: true
  *         schema:
  *           type: string
- *           enum: [a, b, c, d]
+ *           enum: [agromo, biomo, robo, back]
  *     security:
  *       - bearerAuth: []
  *     responses:

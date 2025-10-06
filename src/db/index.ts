@@ -76,6 +76,18 @@ async function connectDB() {
 
     const sequelize = getSequelize(tenant);
     await sequelize.authenticate();
+    try {
+      await sequelize.sync({ alter: true }); // Try to create/alter tables to match models (adds missing columns)
+    } catch (syncErr) {
+      console.warn(`[DB] Warning: sequelize.sync altered failed for tenant "${tenant}":`, (syncErr as Error).message);
+      // Fallback: don't attempt to alter DB schema (prevents startup failure on legacy tables)
+      try {
+        await sequelize.sync({ alter: false });
+      } catch (innerErr) {
+        console.error(`[DB] Error: sequelize.sync fallback failed for tenant "${tenant}":`, (innerErr as Error).message);
+        throw innerErr;
+      }
+    }
   }
   console.log("[DB] All tenant connections successful");
 }
