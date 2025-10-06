@@ -28,6 +28,10 @@ async function startServer(): Promise<void> {
 
     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
 
+  // Expose the raw OpenAPI spec JSON so remote users can inspect it directly
+  app.get('/api-docs.json', (_req: Request, res: Response) => res.json(specs));
+  app.get('/swagger.json', (_req: Request, res: Response) => res.json(specs));
+
     app.use((_req: Request, res: Response) => res.status(404).json({ error: 'Not found' }));
 
     app.listen(PORT, () => {
