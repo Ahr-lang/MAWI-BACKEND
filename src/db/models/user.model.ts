@@ -22,6 +22,12 @@ function defineUserModel(sequelize: any) {
       type: DataTypes.STRING,
       allowNull: false,
     },
+    // Campo 'user_email': mapea a la columna DB `user_email` (si existe)
+    user_email: {
+      type: DataTypes.STRING,
+      allowNull: true,
+      field: 'user_email',
+    },
     // Campo 'lastAccess': fecha y hora del último acceso del usuario (mapea a la columna DB `lastaccess`)
     lastAccess: {
       type: DataTypes.DATE,

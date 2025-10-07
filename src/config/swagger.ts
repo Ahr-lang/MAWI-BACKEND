@@ -15,18 +15,9 @@ const options: any = {
       // Descripción de la API
       description: "Documentación de la API de autenticación con Node.js, Express, Passport y JWT.",
     },
-    // Lista de servidores para mostrar en Swagger UI.
-    // Favor usar la variable de entorno SWAGGER_SERVER_URL para el server por defecto si existe.
-    servers: [
-      {
-        url: process.env.SWAGGER_SERVER_URL || "http://localhost:3000/api",
-        description: "Local / dev server (or from SWAGGER_SERVER_URL env)"
-      },
-      {
-        url: "https://api.ecoranger.org",
-        description: "Production server"
-      }
-    ],
+    // Lista de servidores para mostrar en Swagger UI. We'll populate this dynamically
+    // further down so we can include both source (localhost) and configured/production URLs
+    servers: [],
     components: {
       securitySchemes: {
         // Esquema de seguridad para autenticación Bearer (JWT)
@@ -50,6 +41,7 @@ const options: any = {
           properties: {
             username: { type: "string", example: "enrique" },
             password: { type: "string", example: "ilovemessi3520" },
+            user_email: { type: "string", format: "email", example: "enrique@example.com" },
           },
         },
         // Esquema para respuesta de autenticación
@@ -61,13 +53,20 @@ const options: any = {
             token_type: { type: "string", example: "Bearer" },
             expires_in: { type: "string", example: "7d" },
             user: {
-              type: "object",
-              properties: {
-                id: { type: "integer", example: 1 },
-                username: { type: "string", example: "enrique" },
-                tenant: { type: "string", example: "a" },
-              },
+              $ref: "#/components/schemas/User",
             },
+          },
+        },
+        // Reusable User schema matching the DB columns
+        User: {
+          type: "object",
+          properties: {
+            id: { type: "integer", example: 1 },
+            username: { type: "string", example: "enrique" },
+            user_email: { type: "string", format: "email", example: "enrique@example.com" },
+            lastAccess: { type: "string", format: "date-time", example: "2025-10-07T12:34:56Z" },
+            lastLogin: { type: "string", format: "date-time", example: "2025-10-07T12:00:00Z" },
+            tenant: { type: "string", example: "agromo" },
           },
         },
       },
@@ -117,7 +116,12 @@ const extraPaths = {
       },
       responses: {
         201: {
-          description: "Usuario registrado exitosamente."
+          description: "Usuario registrado exitosamente.",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/User" }
+            }
+          }
         },
         409: {
           description: "El nombre de usuario ya existe."
@@ -191,7 +195,12 @@ const extraPaths = {
       ],
       responses: {
         200: {
-          description: "Información del usuario autenticado."
+          description: "Información del usuario autenticado.",
+          content: {
+            "application/json": {
+              schema: { $ref: "#/components/schemas/User" }
+            }
+          }
         },
         401: {
           description: "Token inválido o ausente."
@@ -253,3 +262,21 @@ const finalSpecs: any = swaggerJsdoc(options);
 finalSpecs.paths = Object.assign({}, extraPaths, (finalSpecs.paths || {}));
 // Export as default so imports (import specs from './config/swagger') continue to work
 export default finalSpecs;
+
+// Build a clear, deduplicated servers list so Swagger UI always shows local + configured/prod
+const localServer = { url: "http://localhost:3000/api", description: "Local / dev server" };
+const configured = process.env.SWAGGER_SERVER_URL ? { url: process.env.SWAGGER_SERVER_URL, description: "Configured server (SWAGGER_SERVER_URL)" } : null;
+const production = { url: "https://api.ecoranger.org", description: "Production server" };
+
+const serversList = [localServer].concat(configured ? [configured] : []).concat([production]);
+// Deduplicate by URL
+const seen = new Set<string>();
+const deduped = serversList.filter(s => {
+  if (seen.has(s.url)) return false;
+  seen.add(s.url);
+  return true;
+});
+
+// Attach to exported spec so Swagger UI displays these servers (and also keep options.definition in sync)
+finalSpecs.servers = deduped;
+if (options && options.definition) options.definition.servers = deduped;

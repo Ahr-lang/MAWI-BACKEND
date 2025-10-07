@@ -56,6 +56,16 @@ function getSequelize(tenant: string): Sequelize {
       dialect: 'postgres',
       ssl: BASE_CONF.ssl as any,
       logging: false,
+      pool: {
+        max: 5,
+        min: 0,
+        acquire: 30000,
+        idle: 10000
+      },
+      dialectOptions: {
+        statement_timeout: 60000,
+        idle_in_transaction_session_timeout: 60000
+      }
     });
 
     // Definimos los modelos en la instancia de Sequelize
@@ -71,25 +81,33 @@ function getSequelize(tenant: string): Sequelize {
 // Función para conectar a todas las bases de datos de tenants
 async function connectDB() {
   for (const tenant of Object.keys(TENANTS)) {
-    const pool = getPool(tenant);
-    await pool.query("SELECT 1");
-
-    const sequelize = getSequelize(tenant);
-    await sequelize.authenticate();
     try {
-      await sequelize.sync({ alter: true }); // Try to create/alter tables to match models (adds missing columns)
-    } catch (syncErr) {
-      console.warn(`[DB] Warning: sequelize.sync altered failed for tenant "${tenant}":`, (syncErr as Error).message);
-      // Fallback: don't attempt to alter DB schema (prevents startup failure on legacy tables)
+      const pool = getPool(tenant);
+      console.log(`[DB] Testing connection for tenant "${tenant}"`);
+      await pool.query("SELECT 1");
+      console.log(`[DB] Connection test successful for tenant "${tenant}"`);
+
+      const sequelize = getSequelize(tenant);
+      await sequelize.authenticate();
       try {
-        await sequelize.sync({ alter: false });
-      } catch (innerErr) {
-        console.error(`[DB] Error: sequelize.sync fallback failed for tenant "${tenant}":`, (innerErr as Error).message);
-        throw innerErr;
+        await sequelize.sync(); // Create tables if they don't exist
+        await sequelize.sync({ alter: true }); // Then alter to match models
+      } catch (syncErr) {
+        console.warn(`[DB] Warning: sequelize.sync altered failed for tenant "${tenant}":`, (syncErr as Error).message);
+        // Fallback: just sync without alter
+        try {
+          await sequelize.sync();
+        } catch (innerErr) {
+          console.error(`[DB] Error: sequelize.sync fallback failed for tenant "${tenant}":`, (innerErr as Error).message);
+          throw innerErr;
+        }
       }
+    } catch (err) {
+      console.error(`[DB] Error connecting to tenant "${tenant}":`, (err as Error).message);
+      // Continue to next tenant instead of failing the whole app
     }
   }
-  console.log("[DB] All tenant connections successful");
+  console.log("[DB] Tenant connection attempts completed");
 }
 
 // Exportamos las funciones y constantes
