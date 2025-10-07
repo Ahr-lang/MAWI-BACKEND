@@ -19,11 +19,11 @@ function ensureAuthenticated(req: any, res: any, next: any) {
 async function register(req: any, res: any) {
   // Obtenemos la instancia de Sequelize del tenant
   const sequelize = req.sequelize;
-  const { username, password } = req.body || {};
+  const { username, password, user_email } = req.body || {};
 
   try {
     // Llamamos al servicio para registrar el usuario
-    const newUser = await UserService.registerUser(sequelize, username, password);
+    const newUser = await UserService.registerUser(sequelize, username, password, user_email);
 
     // Respondemos con éxito
     return res.status(201).json({

@@ -16,25 +16,25 @@ function signToken(payload: any): string {
   return jwt.sign(payload, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
 }
 
-// Configuramos la estrategia de autenticación local (login con username/password)
+// Configuramos la estrategia de autenticación local (login con email/password)
 passport.use(
   new LocalStrategy(
     {
-      usernameField: "username",
+      usernameField: "user_email",
       passwordField: "password",
       passReqToCallback: true, // Pasamos req para acceder a sequelize
       session: false
     },
-    async (req: any, username: string, password: string, done: any) => {
+    async (req: any, email: string, password: string, done: any) => {
       try {
         // Obtenemos sequelize del req (seteado por middleware)
         const sequelize = req.sequelize;
         // Autenticamos al usuario
-        const user = await UserRepository.authenticateUser(sequelize, username, password);
+        const user = await UserRepository.authenticateUser(sequelize, email, password);
         if (!user) return done(null, false, { message: "Invalid credentials" });
 
         // Retornamos el usuario con el tenant
-        return done(null, { id: user.id, username: user.username, tenant: req.tenant });
+        return done(null, { id: user.id, username: user.username, user_email: user.user_email, tenant: req.tenant });
       } catch (err) {
         return done(err);
       }

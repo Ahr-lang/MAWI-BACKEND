@@ -34,14 +34,23 @@ const options: any = {
         }
       },
       schemas: {
-        // Esquema para credenciales de usuario (login/register)
-        UserCredentials: {
+        // Esquema para credenciales de registro
+        RegisterCredentials: {
           type: "object",
-          required: ["username", "password"], // Campos obligatorios
+          required: ["username", "password", "user_email"],
           properties: {
             username: { type: "string", example: "enrique" },
             password: { type: "string", example: "ilovemessi3520" },
             user_email: { type: "string", format: "email", example: "enrique@example.com" },
+          },
+        },
+        // Esquema para credenciales de login
+        LoginCredentials: {
+          type: "object",
+          required: ["user_email", "password"],
+          properties: {
+            user_email: { type: "string", format: "email", example: "enrique@example.com" },
+            password: { type: "string", example: "ilovemessi3520" },
           },
         },
         // Esquema para respuesta de autenticación
@@ -88,7 +97,7 @@ const options: any = {
 // Si quieres rutas predefinidas en el spec, añádelas dentro de definition.paths
 // (las dejamos definidas aquí y las inyectamos en specs.definition abajo si existen)
 const extraPaths = {
-  "/{tenant}/users/register": {
+  "/api/{tenant}/users/register": {
     post: {
       tags: ["Auth"],
       summary: "Registrar un nuevo usuario",
@@ -109,7 +118,7 @@ const extraPaths = {
         content: {
           "application/json": {
             schema: {
-              $ref: "#/components/schemas/UserCredentials"
+              $ref: "#/components/schemas/RegisterCredentials"
             }
           }
         }
@@ -129,7 +138,7 @@ const extraPaths = {
       }
     }
   },
-  "/{tenant}/users/login": {
+  "/api/{tenant}/users/login": {
     post: {
       tags: ["Auth"],
       summary: "Iniciar sesión y obtener un token JWT",
@@ -150,7 +159,7 @@ const extraPaths = {
         content: {
           "application/json": {
             schema: {
-              $ref: "#/components/schemas/UserCredentials"
+              $ref: "#/components/schemas/LoginCredentials"
             }
           }
         }
@@ -172,7 +181,7 @@ const extraPaths = {
       }
     }
   },
-  "/{tenant}/users/me": {
+  "/api/{tenant}/users/me": {
     get: {
       tags: ["Auth"],
       summary: "Obtener información del usuario autenticado",
@@ -208,7 +217,7 @@ const extraPaths = {
       }
     }
   },
-  "/{tenant}/users/logout": {
+  "/api/{tenant}/users/logout": {
     post: {
       tags: ["Auth"],
       summary: "Cerrar sesión (stateless)",
@@ -264,7 +273,7 @@ finalSpecs.paths = Object.assign({}, extraPaths, (finalSpecs.paths || {}));
 export default finalSpecs;
 
 // Build a clear, deduplicated servers list so Swagger UI always shows local + configured/prod
-const localServer = { url: "http://localhost:3000/api", description: "Local / dev server" };
+const localServer = { url: "http://localhost:3000", description: "Local / dev server" };
 const configured = process.env.SWAGGER_SERVER_URL ? { url: process.env.SWAGGER_SERVER_URL, description: "Configured server (SWAGGER_SERVER_URL)" } : null;
 const production = { url: "https://api.ecoranger.org", description: "Production server" };
 
