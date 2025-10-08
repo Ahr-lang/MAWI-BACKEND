@@ -11,18 +11,18 @@ const useSSL = process.env.DB_SSL === "require" ? { rejectUnauthorized: false } 
 
 // Definimos los tenants (bases de datos por inquilino)
 const TENANTS: Record<string, { database: string }> = {
-  agromo: { database: process.env.DB_AGROMO || 'agromo' },
-  biomo: { database: process.env.DB_BIOMO || 'biomo' },
-  robo: { database: process.env.DB_ROBO || 'robo' },
-  back: { database: process.env.DB_BACK || 'back' },
+  agromo: { database: process.env.DB_AGROMO! },
+  biomo: { database: process.env.DB_BIOMO!},
+  robo: { database: process.env.DB_ROBO! },
+  back: { database: process.env.DB_BACK!},
 };
 
 // Configuración base para todas las conexiones
 const BASE_CONF = {
-  host: process.env.DB_HOST || 'localhost',
-  port: Number(process.env.DB_PORT) || 5432,
-  user: process.env.DB_USER || 'postgres',
-  password: process.env.DB_PASS || 'password',
+  host: process.env.DB_HOST!,
+  port: Number(process.env.DB_PORT)!,
+  user: process.env.DB_USER!,
+  password: process.env.DB_PASS!,
   ssl: useSSL,
 };
 
