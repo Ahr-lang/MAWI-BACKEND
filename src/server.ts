@@ -3,12 +3,17 @@ import path from 'path';
 dotenv.config({ path: path.resolve('.env') });
 console.log('Loaded JWT_SECRET:', process.env.JWT_SECRET);
 
+import './shared/tracing'; // Initialize OpenTelemetry
+
 import express, { Request, Response } from 'express';
 import cors from 'cors';
 import swaggerUi from 'swagger-ui-express';
 import specs from './config/swagger';
 import passport from './services/auth.service';
 import userRoutes from './api/routes/user.routes';
+import healthRoutes from './routes/health.routes';
+import adminRoutes from './routes/admin.routes';
+import apiRoutes from './routes/api.routes';
 import { connectDB } from './db/index';
 
 const app = express();
@@ -24,6 +29,9 @@ async function startServer(): Promise<void> {
 
     app.use(passport.initialize());
 
+    app.use('/', healthRoutes);
+    app.use('/admin', adminRoutes);
+    app.use('/api/v1', apiRoutes);
     app.use('/api', userRoutes);
 
     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));

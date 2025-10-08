@@ -1,8 +1,35 @@
 # MAWI-BACKEND
 
-Backend de autenticación- **pg**: Cliente PostgreSQL.
+Backend con Express, Redis, WFQ, OpenTelemetry.
 
-## Estructura de Carpetas y Archivosstruido con Node.js, Express, Sequelize (ORM), Passport y JWT. Soporta 4 tenants (agromo, biomo, robo, back) con bases de datos PostgreSQL separadas
+## Ejecutar
+
+1. Instalar dependencias: `npm install`
+2. Crear directorio logs: `mkdir logs`
+3. Ejecutar Redis en localhost:6379
+4. Ejecutar Jaeger o OTLP collector para traces (opcional, localhost:4318)
+5. Ejecutar Prometheus para métricas (opcional, puerto 9464)
+6. `npm run dev`
+
+## Endpoints
+
+- GET /health
+- POST /api/v1/biomo/data (con headers x-idempotency-key, x-checksum)
+- GET /api/v1/biomo/data/:id
+- GET /admin/redis/metrics
+
+## OpenTelemetry
+
+- Traces: OTLP exporter a localhost:4318
+- Métricas: Prometheus en :9464
+- Logs: JSON con traceId
+
+## HU Implementadas
+
+- HU12: /health, fallback WFQ, logs.
+- HU16: WFQ DRR, cache, idempotencia, backpressure.
+- HU20: /admin/redis/metrics, alertas.
+- HU22: Checksum SHA-256, 422, logs.
 
 ## Arquitectura por Capas (Tiers)
 
