@@ -12,9 +12,6 @@ class RedisService {
     this.client.on('error', (err: Error) => {
       logger.error('Redis Client Error', { error: err.message, service: 'redis' });
     });
-
-    // Connect asynchronously
-    this.connect();
   }
 
   private async connect() {
@@ -29,6 +26,9 @@ class RedisService {
 
   async enqueue(queue: string, item: string, weight: number = 1): Promise<void> {
     try {
+      if (!this.client.isOpen) {
+        await this.client.connect();
+      }
       await this.client.lPush(`${queue}:items`, JSON.stringify({ item, weight, timestamp: Date.now() }));
       logger.info('Enqueued item', { queue, item, weight, event: 'enqueue', status: 'success' });
     } catch (error) {
@@ -40,6 +40,9 @@ class RedisService {
 
   async dequeue(queue: string): Promise<string | null> {
     try {
+      if (!this.client.isOpen) {
+        await this.client.connect();
+      }
       const item = await this.client.rPop(`${queue}:items`);
       if (item) {
         const parsed = JSON.parse(item);
@@ -55,11 +58,22 @@ class RedisService {
   }
 
   async getQueueLength(queue: string): Promise<number> {
-    return await this.client.lLen(`${queue}:items`);
+    try {
+      if (!this.client.isOpen) {
+        await this.client.connect();
+      }
+      return await this.client.lLen(`${queue}:items`);
+    } catch (error) {
+      logger.error('Failed to get queue length', { queue, error: (error as Error).message, event: 'queue_length', status: 'failed' });
+      return 0; // Return 0 if Redis fails
+    }
   }
 
   async setCache(key: string, value: string, ttl: number = 3600): Promise<void> {
     try {
+      if (!this.client.isOpen) {
+        await this.client.connect();
+      }
       await this.client.setEx(key, ttl, value);
       logger.info('Set cache', { key, event: 'cache_set', status: 'success' });
     } catch (error) {
@@ -70,6 +84,9 @@ class RedisService {
 
   async getCache(key: string): Promise<string | null> {
     try {
+      if (!this.client.isOpen) {
+        await this.client.connect();
+      }
       const value = await this.client.get(key);
       if (value) {
         logger.info('Cache hit', { key, event: 'cache_hit', status: 'success' });
@@ -85,22 +102,45 @@ class RedisService {
   }
 
   async incrementMetric(metric: string): Promise<void> {
-    await this.client.incr(metric);
+    try {
+      if (!this.client.isOpen) {
+        await this.client.connect();
+      }
+      await this.client.incr(metric);
+    } catch (error) {
+      logger.error('Failed to increment metric', { metric, error: (error as Error).message, event: 'metric_incr', status: 'failed' });
+    }
   }
 
   async getMetric(metric: string): Promise<number> {
-    const value = await this.client.get(metric);
-    return value ? parseInt(value, 10) : 0;
+    try {
+      if (!this.client.isOpen) {
+        await this.client.connect();
+      }
+      const value = await this.client.get(metric);
+      return value ? parseInt(value, 10) : 0;
+    } catch (error) {
+      logger.error('Failed to get metric', { metric, error: (error as Error).message, event: 'metric_get', status: 'failed' });
+      return 0;
+    }
   }
 
   async getAllMetrics(): Promise<Record<string, number>> {
-    const keys = await this.client.keys('metric:*');
-    const metrics: Record<string, number> = {};
-    for (const key of keys) {
-      const value = await this.client.get(key);
-      metrics[key.replace('metric:', '')] = value ? parseInt(value, 10) : 0;
+    try {
+      if (!this.client.isOpen) {
+        await this.client.connect();
+      }
+      const keys = await this.client.keys('metric:*');
+      const metrics: Record<string, number> = {};
+      for (const key of keys) {
+        const value = await this.client.get(key);
+        metrics[key.replace('metric:', '')] = value ? parseInt(value, 10) : 0;
+      }
+      return metrics;
+    } catch (error) {
+      logger.error('Failed to get all metrics', { error: (error as Error).message, event: 'metrics_get_all', status: 'failed' });
+      return {};
     }
-    return metrics;
   }
 
   async close(): Promise<void> {
