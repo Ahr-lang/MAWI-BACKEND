@@ -8,7 +8,7 @@ export const TENANT_API_KEYS: Record<string, string> = {
 
 // Middleware para verificar API key y setear tenant
 function verifyApiKey(req: any, res: any, next: any) {
-  const apiKey = req.headers['x-api-key'];
+  const apiKey = req.headers['apikey'];
   if (!apiKey) {
     return res.status(401).json({ error: 'API key requerida' });
   }

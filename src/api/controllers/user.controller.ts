@@ -39,6 +39,11 @@ async function register(req: any, res: any) {
     if (err.message === "Username already taken") {
       return res.status(409).json({ error: err.message });
     }
+    // Detect Sequelize connection acquire timeout and return 503
+    if (err.name && err.name === 'SequelizeConnectionAcquireTimeoutError') {
+      console.error('[Register] DB pool exhausted:', err);
+      return res.status(503).json({ error: 'Service unavailable - database busy, try again later' });
+    }
     console.error("[Register] Error:", err);
     return res.status(500).json({ error: "Server error during registration" });
   }

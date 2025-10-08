@@ -30,13 +30,20 @@ const BASE_CONF = {
 const pools = new Map();
 const sequels = new Map();
 
+// Utility: sleep for ms
+function sleep(ms: number) {
+  return new Promise(resolve => setTimeout(resolve, ms));
+}
+
 // Función para obtener un pool de conexiones para un tenant
 function getPool(tenant: string): Pool {
   const t = TENANTS[tenant];
   if (!t || !t.database) throw new Error(`Unknown tenant: ${tenant}`);
 
   if (!pools.has(tenant)) {
-    const pool = new Pool({ ...BASE_CONF, database: t.database });
+  // Increase acquire timeout and allow a few more connections for busy workloads
+  // Note: keep this conservative relative to your Postgres max_connections
+  const pool = new Pool({ ...BASE_CONF, database: t.database, max: 10, idleTimeoutMillis: 10000, connectionTimeoutMillis: 120000 });
     pools.set(tenant, pool);
     console.log(`[DB] Connected pool for tenant "${tenant}" -> ${t.database}`);
   }
@@ -57,10 +64,10 @@ function getSequelize(tenant: string): Sequelize {
       ssl: BASE_CONF.ssl as any,
       logging: false,
       pool: {
-        max: 5,
-        min: 0,
-        acquire: 30000,
-        idle: 10000
+  max: 10,
+  min: 0,
+  acquire: 120000, // increase acquire timeout to 2 minutes
+  idle: 10000
       },
       dialectOptions: {
         statement_timeout: 60000,
@@ -80,31 +87,51 @@ function getSequelize(tenant: string): Sequelize {
 
 // Función para conectar a todas las bases de datos de tenants
 async function connectDB() {
+  // Try connecting to each tenant with retries and backoff to handle transient network issues
   for (const tenant of Object.keys(TENANTS)) {
-    try {
-      const pool = getPool(tenant);
-      console.log(`[DB] Testing connection for tenant "${tenant}"`);
-      await pool.query("SELECT 1");
-      console.log(`[DB] Connection test successful for tenant "${tenant}"`);
+    const maxAttempts = 5;
+    let attempt = 0;
+    let connected = false;
 
-      const sequelize = getSequelize(tenant);
-      await sequelize.authenticate();
+    while (attempt < maxAttempts && !connected) {
+      attempt += 1;
       try {
-        await sequelize.sync(); // Create tables if they don't exist
-        await sequelize.sync({ alter: true }); // Then alter to match models
-      } catch (syncErr) {
-        console.warn(`[DB] Warning: sequelize.sync altered failed for tenant "${tenant}":`, (syncErr as Error).message);
-        // Fallback: just sync without alter
+        const pool = getPool(tenant);
+        console.log(`[DB] Testing connection for tenant "${tenant}" (attempt ${attempt}/${maxAttempts})`);
+        // Use pool.query which will throw if it cannot acquire a connection
+        await pool.query("SELECT 1");
+        console.log(`[DB] Connection test successful for tenant "${tenant}"`);
+
+        const sequelize = getSequelize(tenant);
+        await sequelize.authenticate();
+
         try {
-          await sequelize.sync();
-        } catch (innerErr) {
-          console.error(`[DB] Error: sequelize.sync fallback failed for tenant "${tenant}":`, (innerErr as Error).message);
-          throw innerErr;
+          await sequelize.sync(); // Create tables if they don't exist
+          await sequelize.sync({ alter: true }); // Then alter to match models
+        } catch (syncErr) {
+          console.warn(`[DB] Warning: sequelize.sync altered failed for tenant "${tenant}":`, (syncErr as Error).message);
+          // Fallback: just sync without alter
+          try {
+            await sequelize.sync();
+          } catch (innerErr) {
+            console.error(`[DB] Error: sequelize.sync fallback failed for tenant "${tenant}":`, (innerErr as Error).message);
+            throw innerErr;
+          }
+        }
+
+        connected = true;
+      } catch (err) {
+        console.error(`[DB] Error connecting to tenant "${tenant}" on attempt ${attempt}:`, (err as Error).message);
+        if (attempt < maxAttempts) {
+          const backoff = 1000 * Math.pow(2, attempt); // exponential backoff
+          console.log(`[DB] Retrying tenant "${tenant}" in ${backoff}ms`);
+          // wait before retrying
+          // eslint-disable-next-line no-await-in-loop
+          await sleep(backoff);
+        } else {
+          console.error(`[DB] Giving up connecting to tenant "${tenant}" after ${maxAttempts} attempts`);
         }
       }
-    } catch (err) {
-      console.error(`[DB] Error connecting to tenant "${tenant}":`, (err as Error).message);
-      // Continue to next tenant instead of failing the whole app
     }
   }
   console.log("[DB] Tenant connection attempts completed");
