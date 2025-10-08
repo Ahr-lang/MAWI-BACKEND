@@ -81,8 +81,11 @@ const options: any = {
         },
       },
     },
-    // No se exige API key en la documentación. Protected endpoints still use Bearer JWT where applicable.
-    // (The API server may still require an API key at runtime; docs will not prompt for it.)
+    // By default show the Tenant API Key in the Swagger Authorize modal and apply it to operations.
+    // This only affects the docs/UI; the server enforcement remains implemented by middleware.
+    security: [
+      { "Tenant API Key": [] }
+    ],
   },
   // Archivos donde buscar anotaciones Swagger (rutas, controladores, docs)
   // Durante desarrollo apuntamos a los archivos TypeScript fuente para feedback rápido
@@ -120,6 +123,9 @@ const extraPaths = {
           }
         }
       },
+      security: [
+        { "Tenant API Key": [] }
+      ],
       responses: {
         201: {
           description: "Usuario registrado exitosamente.",
@@ -161,6 +167,9 @@ const extraPaths = {
           }
         }
       },
+      security: [
+        { "Tenant API Key": [] }
+      ],
       responses: {
         200: {
           description: "Inicio de sesión exitoso (token devuelto)",
@@ -195,9 +204,8 @@ const extraPaths = {
         }
       ],
       security: [
-        {
-          bearerAuth: []
-        }
+        { "Tenant API Key": [] },
+        { bearerAuth: [] }
       ],
       responses: {
         200: {
@@ -231,9 +239,8 @@ const extraPaths = {
         }
       ],
       security: [
-        {
-          bearerAuth: []
-        }
+        { "Tenant API Key": [] },
+        { bearerAuth: [] }
       ],
       responses: {
         200: {
