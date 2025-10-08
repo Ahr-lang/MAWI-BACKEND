@@ -1,0 +1,13 @@
+{
+    email admin@ecoranger.org  # opcional: para avisos de ACME
+}
+
+api.ecoranger.org {
+    reverse_proxy api:3000
+    # Caddy hace HTTP->HTTPS y gestiona Let's Encrypt automáticamente
+}
+
+localhost {
+    reverse_proxy 127.0.0.1:3000
+    tls internal  # Genera certificado auto-firmado para desarrollo local
+}

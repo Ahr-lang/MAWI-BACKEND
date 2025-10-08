@@ -3,6 +3,7 @@ services:
     build:
       context: ..
       dockerfile: docker/Dockerfile
+      target: dev
     image: mawi-backend:latest
     environment:
       - PORT=3000
@@ -20,4 +21,26 @@ services:
       - SWAGGER_SERVER_URL=${SWAGGER_SERVER_URL}
     ports:
       - "3000:3000"
+    volumes:
+      - ../src:/usr/src/app/src
+      - ../tsconfig.json:/usr/src/app/tsconfig.json
+      - ../package.json:/usr/src/app/package.json
+      - ../package-lock.json:/usr/src/app/package-lock.json
     restart: unless-stopped
+  caddy:
+    image: caddy:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ../caddy/Caddyfile.local:/etc/caddy/Caddyfile
+      - ../caddy/ssl:/etc/caddy/ssl
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:

@@ -1,0 +1,8 @@
+{
+    email admin@ecoranger.org
+}
+
+localhost {
+    reverse_proxy api:3000
+    tls /etc/caddy/ssl/localhost.pem /etc/caddy/ssl/localhost-key.pem
+}
