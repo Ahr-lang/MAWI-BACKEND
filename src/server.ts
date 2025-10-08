@@ -35,7 +35,7 @@ async function startServer(): Promise<void> {
     app.use((_req: Request, res: Response) => res.status(404).json({ error: 'Not found' }));
 
     app.listen(PORT, () => {
-      const base = process.env.SWAGGER_SERVER_URL || `http://localhost:${PORT}`;
+      const base = process.env.SWAGGER_SERVER_URL || `https://localhost:${PORT}`;
       console.log(`Auth API running on ${base}`);
     });
   } catch (error) {

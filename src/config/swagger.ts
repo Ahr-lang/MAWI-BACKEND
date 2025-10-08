@@ -277,7 +277,7 @@ finalSpecs.paths = Object.assign({}, extraPaths, (finalSpecs.paths || {}));
 export default finalSpecs;
 
 // Build a clear, deduplicated servers list so Swagger UI always shows local + configured/prod
-const localServer = { url: "http://localhost:3000", description: "Local / dev server" };
+const localServer = { url: "https://localhost", description: "Local / dev server" };
 const configured = process.env.SWAGGER_SERVER_URL ? { url: process.env.SWAGGER_SERVER_URL, description: "Configured server (SWAGGER_SERVER_URL)" } : null;
 const production = { url: "https://api.ecoranger.org", description: "Production server" };
 
