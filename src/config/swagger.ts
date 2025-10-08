@@ -26,11 +26,12 @@ const options: any = {
           scheme: "bearer",
           bearerFormat: "JWT",
         },
-        // Esquema de seguridad para API keys (x-api-key header)
-        apiKeyAuth: {
+        // Named API key scheme so Swagger UI shows a clear entry in "Authorize"
+        "Tenant API Key": {
           type: 'apiKey',
           in: 'header',
-          name: 'x-api-key'
+          name: 'apikey',
+          description: 'Tenant API key header (header name: "apikey"). Provide the tenant-specific API key here (for example: "robo-key-789"). This header is required by the server at runtime.'
         }
       },
       schemas: {
@@ -80,12 +81,8 @@ const options: any = {
         },
       },
     },
-    // Requerimos apiKey por defecto (la API verifica x-api-key middleware)
-    security: [
-      {
-        apiKeyAuth: []
-      }
-    ],
+    // No se exige API key en la documentación. Protected endpoints still use Bearer JWT where applicable.
+    // (The API server may still require an API key at runtime; docs will not prompt for it.)
   },
   // Archivos donde buscar anotaciones Swagger (rutas, controladores, docs)
   // Durante desarrollo apuntamos a los archivos TypeScript fuente para feedback rápido
