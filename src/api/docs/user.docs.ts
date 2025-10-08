@@ -7,7 +7,7 @@
 
 /**
  * @swagger
- * /{tenant}/users/register:
+ * /api/{tenant}/users/register:
  *   post:
  *     summary: Registrar un nuevo usuario
  *     tags: [Auth]
@@ -24,7 +24,7 @@
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/UserCredentials'
+ *             $ref: '#/components/schemas/RegisterCredentials'
  *     responses:
  *       201:
  *         description: Usuario registrado exitosamente.
@@ -34,7 +34,7 @@
 
 /**
  * @swagger
- * /{tenant}/users/login:
+ * /api/{tenant}/users/login:
  *   post:
  *     summary: Iniciar sesión y obtener un token JWT
  *     tags: [Auth]
@@ -51,7 +51,7 @@
  *       content:
  *         application/json:
  *           schema:
- *             $ref: '#/components/schemas/UserCredentials'
+ *             $ref: '#/components/schemas/LoginCredentials'
  *     responses:
  *       200:
  *         description: Inicio de sesión exitoso (token devuelto)
@@ -65,7 +65,7 @@
 
 /**
  * @swagger
- * /{tenant}/users/me:
+ * /api/{tenant}/users/me:
  *   get:
  *     summary: Obtener información del usuario autenticado
  *     tags: [Auth]
@@ -87,7 +87,7 @@
 
 /**
  * @swagger
- * /{tenant}/users/logout:
+ * /api/{tenant}/users/logout:
  *   post:
  *     summary: Cerrar sesión (stateless)
  *     tags: [Auth]
