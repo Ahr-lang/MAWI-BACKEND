@@ -18,7 +18,6 @@ services:
       - DB_ROBO=${DB_ROBO}
       - DB_BACK=${DB_BACK}
       - DB_SSL=${DB_SSL}
-      - SWAGGER_SERVER_URL=${SWAGGER_SERVER_URL}
     expose:
       - "3000"       # only expose internally, don't bind 80/443
     restart: unless-stopped
