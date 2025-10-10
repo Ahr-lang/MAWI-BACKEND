@@ -1,7 +1,7 @@
+// src/server.ts
 import * as dotenv from 'dotenv';
 import path from 'path';
 dotenv.config({ path: path.resolve('.env') });
-console.log('Loaded JWT_SECRET:', process.env.JWT_SECRET);
 
 import express, { Request, Response } from 'express';
 import cors from 'cors';
@@ -12,9 +12,12 @@ import userRoutes from './api/routes/user.routes';
 import { connectDB } from './db/index';
 
 const app = express();
-const PORT: string | number = process.env.PORT || 3000;
+const PORT = Number(process.env.PORT || 3000);
 
-async function startServer(): Promise<void> {
+// If you're behind a proxy (Coolify/Traefik), let Express trust X-Forwarded-* so urls are correct
+app.set('trust proxy', 1);
+
+async function startServer() {
   try {
     await connectDB();
 
@@ -26,20 +29,24 @@ async function startServer(): Promise<void> {
 
     app.use('/api', userRoutes);
 
+    // Swagger UI + raw specs
     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
+    app.get('/api-docs.json', (_req: Request, res: Response) => res.json(specs));
+    app.get('/swagger.json', (_req: Request, res: Response) => res.json(specs));
 
-  // Expose the raw OpenAPI spec JSON so remote users can inspect it directly
-  app.get('/api-docs.json', (_req: Request, res: Response) => res.json(specs));
-  app.get('/swagger.json', (_req: Request, res: Response) => res.json(specs));
+    // Simple health check
+    app.get('/healthz', (_req, res) => res.json({ ok: true }));
 
-    app.use((_req: Request, res: Response) => res.status(404).json({ error: 'Not found' }));
+    app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
 
-    app.listen(PORT, () => {
-      const base = process.env.SWAGGER_SERVER_URL || `https://localhost:${PORT}`;
-      console.log(`Auth API running on ${base}`);
+    // IMPORTANT: bind to 0.0.0.0 so it’s reachable from the proxy
+    app.listen(PORT, '0.0.0.0', () => {
+      const serverUrl = process.env.SWAGGER_SERVER_URL || `http://localhost:${PORT}/api`;
+      const uiUrl = (serverUrl.replace(/\/api$/, '')) + '/api-docs';
+      console.log(`Auth API running. Base: ${serverUrl} | Swagger UI: ${uiUrl}`);
     });
-  } catch (error) {
-    console.error('Error starting server:', (error as Error).message);
+  } catch (err: any) {
+    console.error('Error starting server:', err.message);
     process.exit(1);
   }
 }
