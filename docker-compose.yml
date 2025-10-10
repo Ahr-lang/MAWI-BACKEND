@@ -1,0 +1,41 @@
+services:
+  api:
+    build:
+      context: .                # repo root
+      dockerfile: docker/Dockerfile
+      target: production
+    image: mawi-backend:prod
+    environment:
+      - PORT=3000
+      - JWT_SECRET=${JWT_SECRET}
+      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
+      - DB_HOST=${DB_HOST}
+      - DB_PORT=${DB_PORT}
+      - DB_USER=${DB_USER}
+      - DB_PASS=${DB_PASS}
+      - DB_AGROMO=${DB_AGROMO}
+      - DB_BIOMO=${DB_BIOMO}
+      - DB_ROBO=${DB_ROBO}
+      - DB_BACK=${DB_BACK}
+      - DB_SSL=${DB_SSL}
+      - SWAGGER_SERVER_URL=${SWAGGER_SERVER_URL}
+    ports:
+      - "3000:3000"
+    restart: unless-stopped
+
+  caddy:
+    image: caddy:alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./caddy/Caddyfile.prod:/etc/caddy/Caddyfile   # notice: no `..`
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+    restart: unless-stopped
+
+volumes:
+  caddy_data:
+  caddy_config:
