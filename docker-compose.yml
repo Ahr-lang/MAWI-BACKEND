@@ -1,7 +1,7 @@
 services:
   api:
     build:
-      context: .                # repo root
+      context: .
       dockerfile: docker/Dockerfile
       target: production
     image: mawi-backend:prod
@@ -19,23 +19,6 @@ services:
       - DB_BACK=${DB_BACK}
       - DB_SSL=${DB_SSL}
       - SWAGGER_SERVER_URL=${SWAGGER_SERVER_URL}
-    ports:
-      - "3000:3000"
+    expose:
+      - "3000"       # only expose internally, don't bind 80/443
     restart: unless-stopped
-
-  caddy:
-    image: caddy:alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ./caddy/Caddyfile.prod:/etc/caddy/Caddyfile   # notice: no `..`
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - api
-    restart: unless-stopped
-
-volumes:
-  caddy_data:
-  caddy_config:
