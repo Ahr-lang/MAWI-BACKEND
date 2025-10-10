@@ -22,19 +22,4 @@ services:
     ports:
       - "3000:3000"
     restart: unless-stopped
-  caddy:
-    image: caddy:alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ../caddy/Caddyfile.prod:/etc/caddy/Caddyfile
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - api
-    restart: unless-stopped
-
-volumes:
-  caddy_data:
-  caddy_config:
+ 
