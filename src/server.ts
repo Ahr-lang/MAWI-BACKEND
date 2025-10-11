@@ -10,6 +10,7 @@ import specs from './config/swagger';
 import passport from './services/auth.service';
 import userRoutes from './api/routes/user.routes';
 import { connectDB } from './db/index';
+import { swaggerLogger } from './api/middlewares/logger';
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
@@ -35,6 +36,9 @@ async function startServer() {
 
     /* ----------------------------- API ROUTES ----------------------------- */
     app.use('/api', userRoutes);
+
+    /* ----------------------------- SWAGGER LOGGER --------------------------- */
+    app.use(swaggerLogger);
 
     /* ----------------------------- SWAGGER DOCS --------------------------- */
     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));

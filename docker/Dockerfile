@@ -6,6 +6,16 @@ RUN npm ci
 COPY . .
 RUN npm run build
 
+# Development stage
+FROM node:alpine AS dev
+WORKDIR /usr/src/app
+ENV NODE_ENV=development
+COPY package*.json ./
+RUN npm ci
+COPY . .
+EXPOSE 3000
+CMD ["npm", "run", "dev"]
+
 # Production stage
 FROM node:alpine AS production
 WORKDIR /usr/src/app
