@@ -20,5 +20,6 @@ services:
       - DB_ROBO=${DB_ROBO}
       - DB_BACK=${DB_BACK}
       - DB_SSL=${DB_SSL}
-      - SWAGGER_SERVER_URL=${SWAGGER_SERVER_URL}   # e.g. https://api.ecoranger.org/api
+      # ✅ Important line — adds your real API base for Swagger & server logs
+      - SWAGGER_SERVER_URL=${SWAGGER_SERVER_URL}
     restart: unless-stopped
