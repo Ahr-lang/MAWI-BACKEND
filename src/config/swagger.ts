@@ -1,9 +1,9 @@
-// config/swagger.ts
+// src/config/swagger.ts
 import swaggerJsdoc from "swagger-jsdoc";
 import path from "path";
 
+/* ----------------------------- Paths (fixed) ----------------------------- */
 
-// Put this near the top of swagger.ts, before you call swaggerJSDoc(...)
 const extraPaths = {
   "/api/{tenant}/users/register": {
     post: {
@@ -72,26 +72,83 @@ const extraPaths = {
   }
 };
 
-const API_BASE =
-  process.env.SWAGGER_SERVER_URL               // e.g. "https://api.ecoranger.org/api"
-  || "http://localhost:3000/api";              // sane default for local dev
+/* ---------------------- Server URL normalization ------------------------ */
+
+// Example desired values:
+//   SWAGGER_SERVER_URL = "https://api.ecoranger.org/api"
+//   Local default      = "http://localhost:3000/api"
+const rawBase =
+  process.env.SWAGGER_SERVER_URL || "http://localhost:3000/api";
+
+// Normalize: strip trailing slashes; ensure it ends with /api
+const trimmed = rawBase.replace(/\/+$/, "");
+const API_BASE = trimmed.endsWith("/api") ? trimmed : `${trimmed}/api`;
+
+/* ----------------------------- Swagger setup ---------------------------- */
 
 const options: any = {
   definition: {
     openapi: "3.0.0",
-    info: { title: "API de Autenticación", version: "1.0.0",
-      description: "Documentación de la API de autenticación con Node.js, Express, Passport y JWT."
+    info: {
+      title: "API de Autenticación",
+      version: "1.0.0",
+      description:
+        "Documentación de la API de autenticación con Node.js, Express, Passport y JWT.",
     },
+    // Keep servers list minimal & de-duped to avoid UI confusion.
     servers: [
-      { url: API_BASE, description: "Configured base (SWAGGER_SERVER_URL or local default)" },
-      { url: "https://api.ecoranger.org/api", description: "Production" },
-      { url: "http://localhost:3000/api", description: "Local" },
+      { url: API_BASE, description: "Configured base" },
+      { url: "http://localhost:3000/api", description: "Local (dev)" },
     ],
     components: {
       securitySchemes: {
         bearerAuth: { type: "http", scheme: "bearer", bearerFormat: "JWT" },
-        "Tenant API Key": { type: "apiKey", in: "header", name: "apikey",
-          description: 'Tenant API key header (e.g. "robo-key-789")' }
+        "Tenant API Key": {
+          type: "apiKey",
+          in: "header",
+          name: "apikey",
+          description: 'Tenant API key header (e.g. "robo-key-789")',
+        },
+      },
+      schemas: {
+        RegisterCredentials: {
+          type: "object",
+          required: ["username", "password", "user_email"],
+          properties: {
+            username: { type: "string", example: "enrique" },
+            password: { type: "string", example: "ilovemessi3520" },
+            user_email: { type: "string", format: "email", example: "enrique@example.com" },
+          },
+        },
+        LoginCredentials: {
+          type: "object",
+          required: ["user_email", "password"],
+          properties: {
+            user_email: { type: "string", format: "email", example: "enrique@example.com" },
+            password: { type: "string", example: "ilovemessi3520" },
+          },
+        },
+        AuthResponse: {
+          type: "object",
+          properties: {
+            message: { type: "string", example: "Inicio de sesión exitoso." },
+            token: { type: "string", example: "eyJhbGciOiJIUzI1NiIsInR5cCI6Ikp..." },
+            token_type: { type: "string", example: "Bearer" },
+            expires_in: { type: "string", example: "7d" },
+            user: { $ref: "#/components/schemas/User" },
+          },
+        },
+        User: {
+          type: "object",
+          properties: {
+            id: { type: "integer", example: 1 },
+            username: { type: "string", example: "enrique" },
+            user_email: { type: "string", format: "email", example: "enrique@example.com" },
+            lastAccess: { type: "string", format: "date-time", example: "2025-10-07T12:34:56Z" },
+            lastLogin: { type: "string", format: "date-time", example: "2025-10-07T12:00:00Z" },
+            tenant: { type: "string", example: "agromo" },
+          },
+        },
       },
     },
     security: [{ "Tenant API Key": [] }],
@@ -99,7 +156,7 @@ const options: any = {
   apis: [], // filled below
 };
 
-// … keep your extraPaths and globs exactly as you have …
+/* ------------------------- Source/Dist globs ---------------------------- */
 
 const projectRoot = path.resolve(__dirname, "..", "..");
 const tsGlobs = [
@@ -113,6 +170,8 @@ const jsGlobs = [
   path.join(projectRoot, "dist/api/docs/*.js"),
 ];
 options.apis = tsGlobs.concat(jsGlobs);
+
+/* --------------------------- Build & export ----------------------------- */
 
 const specs: any = swaggerJsdoc(options);
 specs.paths = { ...(specs.paths || {}), ...extraPaths };

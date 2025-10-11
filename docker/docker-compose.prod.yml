@@ -1,3 +1,5 @@
+version: "3.9"
+
 services:
   api:
     build:
@@ -18,8 +20,5 @@ services:
       - DB_ROBO=${DB_ROBO}
       - DB_BACK=${DB_BACK}
       - DB_SSL=${DB_SSL}
-      - SWAGGER_SERVER_URL=${SWAGGER_SERVER_URL}
-    ports:
-      - "3000:3000"
+      - SWAGGER_SERVER_URL=${SWAGGER_SERVER_URL}   # e.g. https://api.ecoranger.org/api
     restart: unless-stopped
- 
