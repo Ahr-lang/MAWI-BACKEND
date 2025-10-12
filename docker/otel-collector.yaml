@@ -1,0 +1,4 @@
+docker run --rm -p 4318:4318 \
+  -v "$PWD/docker/otel-collector.yaml:/etc/otel-collector.yaml:ro" \
+  otel/opentelemetry-collector:latest \
+  --config=/etc/otel-collector.yaml
