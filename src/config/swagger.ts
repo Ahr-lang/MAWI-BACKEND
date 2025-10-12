@@ -2,7 +2,7 @@
 import swaggerJsdoc from "swagger-jsdoc";
 import path from "path";
 
-/* ----------------------------- Paths (fixed) ----------------------------- */
+/* ----------------------------- Rutas (fijas) ----------------------------- */
 
 const extraPaths = {
   "/api/{tenant}/users/register": {
@@ -72,19 +72,19 @@ const extraPaths = {
   }
 };
 
-/* ---------------------- Server URL normalization ------------------------ */
+/* ---------------------- Normalización de URL del servidor ------------------------ */
 
-// Example desired values:
+// Valores deseados de ejemplo:
 //   SWAGGER_SERVER_URL = "https://api.ecoranger.org/api"
-//   Local default      = "http://localhost:3000/api"
+//   Valor por defecto local = "http://localhost:3000/api"
 const rawBase =
   process.env.SWAGGER_SERVER_URL || "http://localhost:3000/api";
 
-// Normalize: strip trailing slashes; ensure it ends with /api
+// Normalizar: quitar barras finales; asegurar que termina con /api
 const trimmed = rawBase.replace(/\/+$/, "");
 const API_BASE = trimmed.endsWith("/api") ? trimmed : `${trimmed}/api`;
 
-/* ----------------------------- Swagger setup ---------------------------- */
+/* ----------------------------- Configuración de Swagger ---------------------------- */
 
 const options: any = {
   definition: {
@@ -156,7 +156,7 @@ const options: any = {
   apis: [], // filled below
 };
 
-/* ------------------------- Source/Dist globs ---------------------------- */
+/* ------------------------- Patrones de archivos fuente ---------------------------- */
 
 const projectRoot = path.resolve(__dirname, "..", "..");
 const tsGlobs = [
@@ -171,7 +171,7 @@ const jsGlobs = [
 ];
 options.apis = tsGlobs.concat(jsGlobs);
 
-/* --------------------------- Build & export ----------------------------- */
+/* --------------------------- Construir y exportar ----------------------------- */
 
 const specs: any = swaggerJsdoc(options);
 specs.paths = { ...(specs.paths || {}), ...extraPaths };
