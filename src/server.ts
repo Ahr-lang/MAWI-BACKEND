@@ -1,15 +1,17 @@
-// src/server.ts
 import * as dotenv from 'dotenv';
 import path from 'path';
 dotenv.config({ path: path.resolve('.env') });
 
-import express, { Request, Response } from 'express';
+import './telemetry/tracing';
+
+import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
 import swaggerUi from 'swagger-ui-express';
 import specs from './config/swagger';
 import passport from './services/auth.service';
 import userRoutes from './api/routes/user.routes';
 import { connectDB } from './db/index';
+import { attachTraceIds, deprecatedRoute } from './api/middlewares/otelContext';
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
@@ -17,8 +19,6 @@ const PORT = Number(process.env.PORT || 3000);
 /* -------------------------------------------------------------------------- */
 /*                              TRUST REVERSE PROXY                           */
 /* -------------------------------------------------------------------------- */
-// Necesario cuando estás detrás de Traefik/Coolify o un proxy que maneja HTTPS.
-// Esto asegura que `req.secure` y las URLs en Swagger se detecten correctamente.
 app.set('trust proxy', 1);
 
 /* -------------------------------------------------------------------------- */
@@ -28,13 +28,20 @@ async function startServer() {
   try {
     await connectDB();
 
+    /* ----------------------------- MIDDLEWARES ---------------------------- */
     app.use(cors());
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
     app.use(passport.initialize());
 
+    // 🟣 Inserta el middleware de OpenTelemetry (añade traceId/spanId)
+    app.use(attachTraceIds);
+
     /* ----------------------------- API ROUTES ----------------------------- */
     app.use('/api', userRoutes);
+
+    // 🟣 Ejemplo de endpoint obsoleto (CA4)
+    app.all('/api/v1/old-auth', deprecatedRoute('Use /api/v2/auth instead'));
 
     /* ----------------------------- SWAGGER DOCS --------------------------- */
     app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(specs));
@@ -47,9 +54,21 @@ async function startServer() {
     /* ----------------------------- 404 HANDLER ---------------------------- */
     app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
 
+    /* ----------------------------- ERROR HANDLER -------------------------- */
+    app.use(
+      (err: any, req: Request, res: Response, _next: NextFunction) => {
+        const status = err?.status || 500;
+        const message = err?.message || 'Internal Server Error';
+
+        res.status(status).json({
+          error: { code: status, message },
+          traceId: req.traceId || null,
+        });
+      }
+    );
+
     /* ----------------------------- START SERVER --------------------------- */
     app.listen(PORT, '0.0.0.0', () => {
-      // Usamos la URL configurada o una local por defecto
       const base =
         process.env.SWAGGER_SERVER_URL?.replace(/\/+$/, '') ||
         `http://localhost:${PORT}/api`;
