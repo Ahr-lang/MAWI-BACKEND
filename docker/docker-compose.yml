@@ -19,6 +19,8 @@ services:
       - DB_BACK=${DB_BACK}
       - DB_SSL=${DB_SSL}
       - SWAGGER_SERVER_URL=${SWAGGER_SERVER_URL}
+      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://otel-collector:4318/v1/traces
+      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://otel-collector:4318/v1/metrics
     ports:
       - "3000:3000"
     volumes:
@@ -37,7 +39,44 @@ services:
     depends_on:
       - api
     restart: unless-stopped
+  tempo:
+    image: grafana/tempo:latest
+    ports:
+      - "4318:4318"  # OTLP traces
+      - "3200:3200"  # Tempo API
+    volumes:
+      - ./observability/tempo-config.yaml:/etc/tempo-config.yaml
+    command: ["-config.file=/etc/tempo-config.yaml"]
+    restart: unless-stopped
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml
+    restart: unless-stopped
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3001:3000"  # Avoid conflict with API on 3000
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana_data:/var/lib/grafana
+    restart: unless-stopped
+  otel-collector:
+    image: otel/opentelemetry-collector:latest
+    volumes:
+      - ./observability/otel-collector-config.yaml:/etc/otel-collector-config.yaml
+    command: ["--config=/etc/otel-collector-config.yaml"]
+    ports:
+      - "4319:4318"  # Expose collector on 4319 to avoid conflict with Tempo
+    depends_on:
+      - tempo
+      - prometheus
+    restart: unless-stopped
 
 volumes:
   caddy_data:
   caddy_config:
+  grafana_data:

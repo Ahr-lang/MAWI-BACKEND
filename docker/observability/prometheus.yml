@@ -1,0 +1,12 @@
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+remote_write:
+  - url: "http://localhost:9201/write"  # This is for Cortex or similar, but for OTEL, the collector pushes
+
+# Note: OTEL collector will push metrics to Prometheus remote write endpoint
