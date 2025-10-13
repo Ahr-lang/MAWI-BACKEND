@@ -10,6 +10,7 @@ import swaggerUi from 'swagger-ui-express';
 import specs from './config/swagger';
 import passport from './services/auth.service';
 import userRoutes from './api/routes/user.routes';
+import formRoutes from './api/routes/form.routes';
 import { connectDB } from './db/index';
 import { attachTraceIds, deprecatedRoute } from './api/middlewares/otelContext';
 
@@ -39,6 +40,7 @@ async function startServer() {
 
     /* ----------------------------- API ROUTES ----------------------------- */
     app.use('/api', userRoutes);
+    app.use('/api', formRoutes);
 
     // 🟣 Ejemplo de endpoint obsoleto (CA4)
     app.all('/api/v1/old-auth', deprecatedRoute('Use /api/v2/auth instead'));

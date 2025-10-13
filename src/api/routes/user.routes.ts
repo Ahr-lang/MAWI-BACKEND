@@ -6,7 +6,8 @@ import verifyApiKey from "../middlewares/verifyApiKey";
 import tenantRateLimit from "../middlewares/rateLimit";
 // Importamos las funciones del controlador de usuarios
 import { ensureAuthenticated, register, login, me, logout } from "../controllers/user.controller";
-
+// Importamos las funciones del controlador de formularios
+import { createSubmission } from "../controllers/form.controller"
 // Creamos una instancia de Router
 const router = Router();
 
