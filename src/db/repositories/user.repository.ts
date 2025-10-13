@@ -41,4 +41,14 @@ export default class UserRepository {
     const user = await User.create({ username, password_hash: passwordHash, user_email });
     return { id: user.id, username: user.username, user_email: user.user_email };
   }
+
+  // Método para obtener todos los usuarios de un tenant (solo username)
+  static async getAllUsers(sequelize: any) {
+    const User = sequelize.models.User;
+    const users = await User.findAll({
+      attributes: ['username'], // Solo retornamos username
+      order: [['username', 'ASC']] // Ordenamos alfabéticamente
+    });
+    return users.map((user: any) => ({ username: user.username }));
+  }
 }

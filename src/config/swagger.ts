@@ -13,7 +13,7 @@ const extraPaths = {
 //   SWAGGER_SERVER_URL = "https://api.ecoranger.org"
 //   Valor por defecto local = "http://localhost:3000"
 const rawBase =
-  process.env.SWAGGER_SERVER_URL || "http://localhost:3000";
+  "http://localhost:3000"; // Force localhost for development
 
 // Normalizar: quitar barras finales
 const trimmed = rawBase.replace(/\/+$/, "");

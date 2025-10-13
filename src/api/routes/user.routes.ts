@@ -6,7 +6,7 @@ import verifyApiKey from "../middlewares/verifyApiKey";
 import tenantRateLimit from "../middlewares/rateLimit";
 import { validateRequest } from "../middlewares/validation";
 // Importamos las funciones del controlador de usuarios
-import { ensureAuthenticated, register, login, me, logout } from "../controllers/user.controller";
+import { ensureAuthenticated, register, login, me, logout, getUsers } from "../controllers/user.controller";
 
 // Creamos una instancia de Router
 const router = Router();
@@ -18,6 +18,8 @@ router.post("/:tenant/users/register", verifyApiKey, tenantRateLimit, useTenant,
 router.post("/:tenant/users/login", verifyApiKey, tenantRateLimit, useTenant, validateRequest, login);
 // Ruta para obtener info del usuario autenticado (GET /:tenant/users/me) - requiere autenticación
 router.get("/:tenant/users/me", verifyApiKey, tenantRateLimit, useTenant, ensureAuthenticated, me);
+// Ruta para obtener todos los usuarios (GET /:tenant/users) - requiere autenticación
+router.get("/:tenant/users", verifyApiKey, tenantRateLimit, useTenant, ensureAuthenticated, getUsers);
 // Ruta para cerrar sesión (POST /:tenant/users/logout) - requiere autenticación
 router.post("/:tenant/users/logout", verifyApiKey, tenantRateLimit, useTenant, ensureAuthenticated, logout);
 
