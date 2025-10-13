@@ -11,6 +11,8 @@
  *   post:
  *     summary: Registrar un nuevo usuario
  *     tags: [Auth]
+ *     security:
+ *       - Tenant API Key: []
  *     parameters:
  *       - in: path
  *         name: tenant
@@ -38,6 +40,8 @@
  *   post:
  *     summary: Iniciar sesión y obtener un token JWT
  *     tags: [Auth]
+ *     security:
+ *       - Tenant API Key: []
  *     parameters:
  *       - in: path
  *         name: tenant
@@ -78,6 +82,7 @@
  *           enum: [agromo, biomo, robo, back]
  *     security:
  *       - bearerAuth: []
+ *       - Tenant API Key: []
  *     responses:
  *       200:
  *         description: Información del usuario autenticado.
@@ -100,6 +105,7 @@
  *           enum: [agromo, biomo, robo, back]
  *     security:
  *       - bearerAuth: []
+ *       - Tenant API Key: []
  *     responses:
  *       200:
  *         description: Mensaje de cierre de sesión 

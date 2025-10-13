@@ -83,6 +83,16 @@ const options: any = {
             tenant: { type: "string", example: "agromo" },
           },
         },
+        FormSubmission: {
+          type: "object",
+          description: "Dynamic form submission payload",
+          additionalProperties: true,
+          example: {
+            field1: "value1",
+            field2: 123,
+            field3: true
+          },
+        },
       },
     },
     security: [{ "Tenant API Key": [] }],
