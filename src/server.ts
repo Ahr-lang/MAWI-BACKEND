@@ -71,8 +71,8 @@ async function startServer() {
     app.listen(PORT, '0.0.0.0', () => {
       const base =
         process.env.SWAGGER_SERVER_URL?.replace(/\/+$/, '') ||
-        `http://localhost:${PORT}/api`;
-      const ui = base.replace(/\/api$/, '') + '/api-docs';
+        `http://localhost:${PORT}`;
+      const ui = base + '/api-docs';
 
       console.log('───────────────────────────────────────────────');
       console.log(`✅ Auth API escuchando en el puerto ${PORT}`);

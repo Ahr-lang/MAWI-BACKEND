@@ -4,6 +4,7 @@ import passport from "passport";
 import { signToken } from "../../services/auth.service";
 // Importamos UserService
 import UserService from "../../services/user.service";
+import { trace, SpanStatusCode } from '@opentelemetry/api';
 
 // Función para asegurar que el usuario esté autenticado
 function ensureAuthenticated(req: any, res: any, next: any) {
@@ -17,13 +18,23 @@ function ensureAuthenticated(req: any, res: any, next: any) {
 
 // Función para registrar un nuevo usuario
 async function register(req: any, res: any) {
+  const span = trace.getActiveSpan();
+  span?.setAttribute('operation', 'user.register');
+  span?.setAttribute('tenant', req.tenant);
+  span?.setAttribute('username', req.body?.username);
+
   // Obtenemos la instancia de Sequelize del tenant
   const sequelize = req.sequelize;
   const { username, password, user_email } = req.body || {};
 
   try {
+    span?.addEvent('Iniciando registro de usuario');
+    
     // Llamamos al servicio para registrar el usuario
     const newUser = await UserService.registerUser(sequelize, username, password, user_email);
+
+    span?.setAttribute('user.id', newUser.id);
+    span?.addEvent('Usuario registrado exitosamente');
 
     // Respondemos con éxito
     return res.status(201).json({
@@ -32,18 +43,25 @@ async function register(req: any, res: any) {
       tenant: req.tenant
     });
   } catch (err: any) {
+    span?.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
+    span?.recordException(err);
+    
     // Manejamos errores específicos
     if (err.message === "Username and password are required") {
+      span?.addEvent('Error de validación: campos requeridos faltantes');
       return res.status(400).json({ error: err.message });
     }
     if (err.message === "Username already taken") {
+      span?.addEvent('Error: nombre de usuario ya existe');
       return res.status(409).json({ error: err.message });
     }
     // Detect Sequelize connection acquire timeout and return 503
     if (err.name && err.name === 'SequelizeConnectionAcquireTimeoutError') {
+      span?.addEvent('Error de base de datos: pool agotado');
       console.error('[Register] DB pool exhausted:', err);
       return res.status(503).json({ error: 'Service unavailable - database busy, try again later' });
     }
+    span?.addEvent('Error interno del servidor');
     console.error("[Register] Error:", err);
     return res.status(500).json({ error: "Server error during registration" });
   }
@@ -51,11 +69,28 @@ async function register(req: any, res: any) {
 
 // Función para iniciar sesión
 function login(req: any, res: any, next: any) {
+  const span = trace.getActiveSpan();
+  span?.setAttribute('operation', 'user.login');
+  span?.setAttribute('tenant', req.tenant);
+  span?.setAttribute('user_email', req.body?.user_email);
+
   passport.authenticate("local", { session: false }, (err: any, user: any, info: any) => {
-    if (err) return next(err);
+    if (err) {
+      span?.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
+      span?.recordException(err);
+      return next(err);
+    }
+    
     if (!user) {
+      span?.setAttribute('auth.failed', true);
+      span?.addEvent('Credenciales inválidas');
       return res.status(401).json({ error: info?.message || "Invalid credentials" });
     }
+
+    span?.setAttribute('auth.success', true);
+    span?.setAttribute('user.id', user.id);
+    span?.setAttribute('user.username', user.username);
+    span?.addEvent('Login exitoso');
 
     // Generamos el token JWT
     const token = signToken({ id: user.id, username: user.username, tenant: user.tenant });

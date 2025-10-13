@@ -1,5 +1,6 @@
 // src/api/middlewares/validation.ts
 import { Request, Response, NextFunction } from 'express';
+import { trace, SpanStatusCode } from '@opentelemetry/api';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
 import specs from '../../config/swagger';
@@ -56,13 +57,20 @@ function resolveSchema(schema: any, specs: any): any {
 
 // Middleware de validación de solicitudes
 export function validateRequest(req: Request, res: Response, next: NextFunction) {
+  const span = trace.getActiveSpan();
+  
   // Obtener el esquema para esta ruta
   const schema = getSchemaForRoute(req.path, req.method);
 
   if (!schema) {
     // No hay esquema definido para esta ruta, omitir validación
+    span?.setAttribute('validation.skipped', true);
+    span?.addEvent('Validación omitida - no hay esquema definido');
     return next();
   }
+
+  span?.setAttribute('validation.schema_found', true);
+  span?.setAttribute('validation.route', `${req.method} ${req.path}`);
 
   const schemaKey = `${req.method}${req.path}`;
   if (!compiledSchemas[schemaKey]) {
@@ -70,8 +78,11 @@ export function validateRequest(req: Request, res: Response, next: NextFunction)
       // Agregar additionalProperties: false para detectar campos extra
       const strictSchema = { ...schema, additionalProperties: false };
       compiledSchemas[schemaKey] = ajv.compile(strictSchema);
+      span?.addEvent('Esquema compilado exitosamente');
     } catch (error) {
       console.error('Error de compilación de esquema:', error);
+      span?.setStatus({ code: SpanStatusCode.ERROR, message: 'Error de compilación de esquema' });
+      span?.recordException(error as Error);
       return res.status(500).json({ error: 'Error interno del servidor' });
     }
   }
@@ -81,6 +92,12 @@ export function validateRequest(req: Request, res: Response, next: NextFunction)
 
   if (!valid) {
     const errors = validate.errors || [];
+
+    span?.setAttribute('validation.failed', true);
+    span?.setAttribute('validation.error_count', errors.length);
+    span?.addEvent('Validación fallida', {
+      'validation.errors': JSON.stringify(errors)
+    });
 
     // Verificar si es un error de tipo/estructura o fallo de integridad (propiedades extra)
     const hasTypeErrors = errors.some((error: any) =>
@@ -93,6 +110,7 @@ export function validateRequest(req: Request, res: Response, next: NextFunction)
 
     if (hasTypeErrors) {
       // Error de validación detallado para tipos/estructuras
+      span?.setAttribute('validation.error_type', 'type_structure');
       const errorMessages = errors.map((error: any) => {
         const field = error.instancePath ? error.instancePath.substring(1) : 'root';
         return `${field}: ${error.message}`;
@@ -104,11 +122,13 @@ export function validateRequest(req: Request, res: Response, next: NextFunction)
       });
     } else if (hasExtraProperties) {
       // Fallo de integridad para campos alterados (propiedades extra)
+      span?.setAttribute('validation.error_type', 'integrity_failure');
       return res.status(422).json({
         error: 'integridad_fallida'
       });
     } else {
       // Otros errores de validación
+      span?.setAttribute('validation.error_type', 'other');
       return res.status(422).json({
         error: 'Validation failed',
         details: errors.map((error: any) => error.message)
@@ -117,5 +137,8 @@ export function validateRequest(req: Request, res: Response, next: NextFunction)
   }
 
   // Validación exitosa
+  span?.setAttribute('validation.success', true);
+  span?.addEvent('Validación exitosa');
+
   next();
 }
