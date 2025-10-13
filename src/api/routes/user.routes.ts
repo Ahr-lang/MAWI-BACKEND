@@ -17,11 +17,11 @@ router.post("/:tenant/users/register", verifyApiKey, tenantRateLimit, useTenant,
 // Ruta para iniciar sesión (POST /:tenant/users/login)
 router.post("/:tenant/users/login", verifyApiKey, tenantRateLimit, useTenant, validateRequest, login);
 // Ruta para obtener info del usuario autenticado (GET /:tenant/users/me) - requiere autenticación
-router.get("/:tenant/users/me", verifyApiKey, tenantRateLimit, useTenant, ensureAuthenticated, me);
+router.get("/:tenant/users/me", verifyApiKey, tenantRateLimit, useTenant, validateRequest, ensureAuthenticated, me);
 // Ruta para obtener todos los usuarios (GET /:tenant/users) - requiere autenticación
-router.get("/:tenant/users", verifyApiKey, tenantRateLimit, useTenant, ensureAuthenticated, getUsers);
+router.get("/:tenant/users", verifyApiKey, tenantRateLimit, useTenant, validateRequest, ensureAuthenticated, getUsers);
 // Ruta para cerrar sesión (POST /:tenant/users/logout) - requiere autenticación
-router.post("/:tenant/users/logout", verifyApiKey, tenantRateLimit, useTenant, ensureAuthenticated, logout);
+router.post("/:tenant/users/logout", verifyApiKey, tenantRateLimit, useTenant, validateRequest, ensureAuthenticated, logout);
 
 // Exportamos el router para usarlo en la app principal
 export default router;

@@ -5,6 +5,55 @@ import path from "path";
 /* ----------------------------- Rutas (fijas) ----------------------------- */
 
 const extraPaths = {
+  "/api/{tenant}/users": {
+    get: {
+      summary: "Obtener lista de todos los usuarios del tenant",
+      tags: ["Auth"],
+      parameters: [
+        {
+          in: "path",
+          name: "tenant",
+          required: true,
+          schema: {
+            type: "string",
+            enum: ["agromo", "biomo", "robo", "back"]
+          },
+          description: "Identificador del tenant"
+        }
+      ],
+      security: [
+        { bearerAuth: [] },
+        { "Tenant API Key": [] }
+      ],
+      responses: {
+        200: {
+          description: "Lista de usuarios obtenida exitosamente",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  users: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        username: { type: "string", example: "enrique" }
+                      }
+                    }
+                  },
+                  tenant: { type: "string", example: "agromo" },
+                  count: { type: "number", example: 5 }
+                }
+              }
+            }
+          }
+        },
+        401: { description: "Token inválido o ausente" },
+        500: { description: "Error del servidor" }
+      }
+    }
+  }
 };
 
 /* ---------------------- Normalización de URL del servidor ------------------------ */

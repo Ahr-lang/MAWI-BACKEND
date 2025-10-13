@@ -127,6 +127,7 @@
  *         description: Identificador del tenant
  *     security:
  *       - bearerAuth: []
+ *       - Tenant API Key: []
  *     responses:
  *       200:
  *         description: Lista de usuarios obtenida exitosamente
