@@ -118,5 +118,39 @@ function logout(_req: any, res: any) {
   return res.json({ message: "Logged out" });
 }
 
+// Función para obtener todos los usuarios de un tenant
+async function getUsers(req: any, res: any) {
+  const span = trace.getActiveSpan();
+  span?.setAttribute('operation', 'user.getUsers');
+  span?.setAttribute('tenant', req.tenant);
+
+  // Obtenemos la instancia de Sequelize del tenant
+  const sequelize = req.sequelize;
+
+  try {
+    span?.addEvent('Obteniendo lista de usuarios');
+    
+    // Llamamos al servicio para obtener todos los usuarios
+    const users = await UserService.getAllUsers(sequelize);
+
+    span?.setAttribute('users.count', users.length);
+    span?.addEvent('Lista de usuarios obtenida exitosamente');
+
+    // Respondemos con los usuarios
+    return res.status(200).json({
+      users,
+      tenant: req.tenant,
+      count: users.length
+    });
+  } catch (err: any) {
+    span?.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
+    span?.recordException(err);
+    
+    span?.addEvent('Error obteniendo usuarios');
+    console.error("[GetUsers] Error:", err);
+    return res.status(500).json({ error: "Server error getting users" });
+  }
+}
+
 // Exportamos las funciones
-export { ensureAuthenticated, register, login, me, logout };
+export { ensureAuthenticated, register, login, me, logout, getUsers };

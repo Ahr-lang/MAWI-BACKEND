@@ -25,4 +25,9 @@ export default class UserService {
     const newUser = await UserRepository.createUser(sequelize, username, passwordHash, user_email);
     return newUser;
   }
+
+  // Método para obtener todos los usuarios de un tenant
+  static async getAllUsers(sequelize: any) {
+    return await UserRepository.getAllUsers(sequelize);
+  }
 }
