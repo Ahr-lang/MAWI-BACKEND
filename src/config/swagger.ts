@@ -22,8 +22,10 @@ const extraPaths = {
         }
       ],
       security: [
-        { bearerAuth: [] },
-        { "Tenant API Key": [] }
+        {
+          bearerAuth: [],
+          "Tenant API Key": []
+        }
       ],
       responses: {
         200: {

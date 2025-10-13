@@ -12,7 +12,11 @@ WORKDIR /usr/src/app
 ENV NODE_ENV=development
 COPY package*.json ./
 RUN npm ci
-COPY . .
+# Copy config files and other necessary files, but not src (it's mounted)
+COPY tsconfig.json ./
+COPY jest.config.js ./
+COPY .env* ./
+# Note: src is mounted via volume, so not copied here
 EXPOSE 3000
 CMD ["npm", "run", "dev"]
 
