@@ -45,15 +45,16 @@ services:
       - "4318:4318"  # OTLP traces
       - "3200:3200"  # Tempo API
     volumes:
-      - ./observability/tempo-config.yaml:/etc/tempo-config.yaml
-    command: ["-config.file=/etc/tempo-config.yaml"]
+      - ./observability/tempo-config.yaml:/etc/tempo.yaml
+    command: ["-config.file=/etc/tempo.yaml"]
     restart: unless-stopped
   prometheus:
     image: prom/prometheus:latest
     ports:
       - "9090:9090"
     volumes:
-      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./observability/prometheus.yml:/etc/prom.yml
+    command: ["--config.file=/etc/prom.yml"]
     restart: unless-stopped
   grafana:
     image: grafana/grafana:latest
@@ -67,8 +68,8 @@ services:
   otel-collector:
     image: otel/opentelemetry-collector:latest
     volumes:
-      - ./observability/otel-collector-config.yaml:/etc/otel-collector-config.yaml
-    command: ["--config=/etc/otel-collector-config.yaml"]
+      - ./observability/otel-collector-config.yaml:/etc/otel.yaml
+    command: ["--config=/etc/otel.yaml"]
     ports:
       - "4319:4318"  # Expose collector on 4319 to avoid conflict with Tempo
     depends_on:
