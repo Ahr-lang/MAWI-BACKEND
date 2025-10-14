@@ -442,7 +442,7 @@ const extraPaths = {
 //   SWAGGER_SERVER_URL = "https://api.ecoranger.org"
 //   Valor por defecto local = "http://localhost:3000"
 const rawBase =
-  "http://localhost:3000"; // Force localhost for development
+  "https://ekgcss8ww8o4ok480g08soo4.91.98.193.75.sslip.io"; // Production URL
 
 // Normalizar: quitar barras finales
 const trimmed = rawBase.replace(/\/+$/, "");
@@ -471,7 +471,8 @@ const options: any = {
     ],
     // Keep servers list minimal & de-duped to avoid UI confusion.
     servers: [
-      { url: API_BASE, description: "Configured base" },
+      { url: API_BASE, description: "Production Server" },
+      { url: "http://localhost:3000", description: "Local Development" },
     ],
     components: {
       securitySchemes: {

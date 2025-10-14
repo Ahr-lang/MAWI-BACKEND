@@ -11,12 +11,80 @@
 
 ---
 
-## 🌾 AGROMO - Formulario único
+## 🌾 AGROMO - Formularios agrícolas
 
-### Crear envío de formulario agrícola
+### � PASO 0: Registrar nuevo usuario (POST /api/agromo/users/register)
+
+```bash
+curl -X POST "http://localhost:3000/api/agromo/users/register" \
+  -H "apikey: agromo-key-123" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "username": "juanito",
+    "password": "p12345",
+    "user_email": "juanito@agromo.com"
+  }'
+```
+
+**Respuesta esperada:**
+```json
+{
+  "message": "User registered successfully",
+  "user": {
+    "id": 11,
+    "username": "juanito",
+    "user_email": "juanito@agromo.com"
+  },
+  "tenant": "agromo"
+}
+```
+
+---
+
+### �🔐 PASO 1: Login para obtener JWT Token
+
+```bash
+curl -X POST "http://localhost:3000/api/agromo/users/login" \
+  -H "apikey: agromo-key-123" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "user_email": "juanito@agromo.com",
+    "password": "p12345"
+  }'
+```
+
+**Respuesta esperada:**
+```json
+{
+  "message": "Login successful",
+  "user": {
+    "id": 11,
+    "username": "juanito",
+    "user_email": "juanito@agromo.com",
+    "tenant": "agromo"
+  },
+  "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "expires_in": "7d"
+}
+```
+
+---
+
+### 💡 Variables para los ejemplos:
+```bash
+# Reemplaza con tu token real obtenido del login
+JWT_TOKEN="eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
+FORM_ID=123  # Reemplaza con ID real obtenido de POST
+```
+
+---
+
+### 📝 PASO 2: Crear envío de formulario agrícola (POST /api/agromo/forms/formulario/submission)
+
 ```bash
 curl -X POST "http://localhost:3000/api/agromo/forms/formulario/submission" \
-  -H "Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..." \
+  -H "Authorization: Bearer $JWT_TOKEN" \
   -H "apikey: agromo-key-123" \
   -H "Content-Type: application/json" \
   -d '{
@@ -30,6 +98,104 @@ curl -X POST "http://localhost:3000/api/agromo/forms/formulario/submission" \
     "id_agricultor": 1,
     "id_cultivo": 1
   }'
+```
+
+**Respuesta esperada:**
+```json
+{
+  "message": "Submission created",
+  "tenant": "agromo",
+  "formKey": "formulario",
+  "data": {
+    "id_formulario": 123,
+    "nombre_formulario": "Formulario de Siembra Maíz",
+    "fecha": "2025-10-14T00:00:00.000Z",
+    "hora": "08:30:00",
+    "nombre_operador": "Juan Pérez",
+    "medidas_plantio": "Distancia entre surcos: 80cm, Profundidad: 5cm",
+    "datos_clima": "Soleado, Temperatura: 25°C",
+    "observaciones": "Condiciones óptimas para siembra",
+    "id_agricultor": 1,
+    "id_cultivo": 1,
+    "__tenant": "agromo",
+    "__form": "formulario"
+  }
+}
+```
+
+---
+
+### 📋 PASO 3: Obtener todos los formularios del usuario (GET /api/agromo/forms)
+
+```bash
+curl -X GET "http://localhost:3000/api/agromo/forms" \
+  -H "Authorization: Bearer $JWT_TOKEN" \
+  -H "apikey: agromo-key-123"
+```
+
+---
+
+### 📋 PASO 4: Obtener formularios de un tipo específico (GET /api/agromo/forms/formulario)
+
+```bash
+curl -X GET "http://localhost:3000/api/agromo/forms/formulario" \
+  -H "Authorization: Bearer $JWT_TOKEN" \
+  -H "apikey: agromo-key-123"
+```
+
+---
+
+### 📋 PASO 5: Obtener formulario específico por ID (GET /api/agromo/forms/formulario/{formId})
+
+```bash
+curl -X GET "http://localhost:3000/api/agromo/forms/formulario/$FORM_ID" \
+  -H "Authorization: Bearer $JWT_TOKEN" \
+  -H "apikey: agromo-key-123"
+```
+
+---
+
+### ✏️ PASO 6: Actualizar formulario específico (PUT /api/agromo/forms/formulario/{formId})
+
+```bash
+curl -X PUT "http://localhost:3000/api/agromo/forms/formulario/$FORM_ID" \
+  -H "Authorization: Bearer $JWT_TOKEN" \
+  -H "apikey: agromo-key-123" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "observaciones": "Formulario actualizado - Condiciones cambiaron",
+    "datos_clima": "Parcialmente nublado, Temperatura: 22°C"
+  }'
+```
+
+---
+
+### 🗑️ PASO 7: Eliminar formulario específico (DELETE /api/agromo/forms/formulario/{formId})
+
+```bash
+curl -X DELETE "http://localhost:3000/api/agromo/forms/formulario/$FORM_ID" \
+  -H "Authorization: Bearer $JWT_TOKEN" \
+  -H "apikey: agromo-key-123"
+```
+
+---
+
+### 👤 PASO 8: Obtener información del usuario actual (GET /api/agromo/users/me)
+
+```bash
+curl -X GET "http://localhost:3000/api/agromo/users/me" \
+  -H "Authorization: Bearer $JWT_TOKEN" \
+  -H "apikey: agromo-key-123"
+```
+
+---
+
+### 👥 PASO 9: Obtener lista de usuarios (GET /api/agromo/users)
+
+```bash
+curl -X GET "http://localhost:3000/api/agromo/users" \
+  -H "Authorization: Bearer $JWT_TOKEN" \
+  -H "apikey: agromo-key-123"
 ```
 
 ---

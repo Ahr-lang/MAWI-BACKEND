@@ -12,15 +12,6 @@ class FormRepository {
     return num;
   }
 
-  // Get model name for biomo/robo forms
-  private getFormModelName(tenant: string, num: number): string {
-    switch (tenant) {
-      case 'biomo': return `BIOMO_FORM_${num}`;
-      case 'robo':  return `ROBO_FORM_${num}`;
-      default: throw Object.assign(new Error('Invalid tenant for numbered forms'), { status: 400 });
-    }
-  }
-
   // Insert data into specific form table
   async insert(sequelize: any, tenant: string, formKey: string, data: any, userId?: number) {
     // Ensure userId is included in data for user-owned forms
@@ -28,128 +19,154 @@ class FormRepository {
       data.id_usuario = userId;
     }
 
+    // Generic approach: try to find the appropriate model based on tenant and formKey
+    let modelName: string;
+
     if (tenant === 'agromo') {
-      // For agromo, we need to handle the complex form structure
-      // For now, let's assume formKey specifies which sub-form or main form
+      // Agromo uses 'formulario' as the main form
       if (formKey === 'formulario' || formKey === '1') {
-        const Model = sequelize.models['AGROMO_FORMULARIO'];
-        if (!Model) throw Object.assign(new Error('AGROMO_FORMULARIO model not found'), { status: 500 });
-        const created = await Model.create(data);
-        return { ...created.toJSON(), __tenant: tenant, __form: 'formulario' };
+        modelName = 'AGROMO_FORMULARIO';
       } else {
-        throw Object.assign(new Error('Agromo forms need specific implementation'), { status: 400 });
+        throw Object.assign(new Error(`Unsupported formKey '${formKey}' for tenant '${tenant}'`), { status: 400 });
       }
-    } else {
-      // For biomo/robo, use numbered forms
+    } else if (tenant === 'biomo' || tenant === 'robo') {
+      // Biomo/Robo use numbered forms (1-7)
       const num = this.normalize(formKey);
-      const modelName = this.getFormModelName(tenant, num);
-      const Model = sequelize.models[modelName];
-      if (!Model) {
-        const e: any = new Error(`Model ${modelName} not found for tenant=${tenant}`);
-        e.status = 500; throw e;
-      }
-      const created = await Model.create(data);
-      return { ...created.toJSON(), __tenant: tenant, __form: num };
+      modelName = `${tenant.toUpperCase()}_FORM_${num}`;
+    } else {
+      throw Object.assign(new Error(`Unsupported tenant '${tenant}'`), { status: 400 });
     }
+
+    const Model = sequelize.models[modelName];
+    if (!Model) {
+      throw Object.assign(new Error(`Model '${modelName}' not found for tenant '${tenant}'`), { status: 500 });
+    }
+
+    const created = await Model.create(data);
+    return { ...created.toJSON(), __tenant: tenant, __form: formKey };
   }
 
   // Get forms by user
   async getByUser(sequelize: any, tenant: string, formKey: string, userId: number) {
+    let modelName: string;
+    let whereCondition: any;
+    let includeOptions: any[] = [];
+
     if (tenant === 'agromo') {
-      // For agromo, get from formulario table
-      const Model = sequelize.models['AGROMO_FORMULARIO'];
-      if (!Model) throw Object.assign(new Error('AGROMO_FORMULARIO model not found'), { status: 500 });
-
-      const forms = await Model.findAll({
-        where: { id_agricultor: userId }, // Assuming id_agricultor is the user reference
-        include: [
-          { model: sequelize.models['AGROMO_AGRICULTOR'], as: 'agricultor' },
-          { model: sequelize.models['AGROMO_CULTIVO'], as: 'cultivo' },
-          { model: sequelize.models['AGROMO_CONDICIONES_CLIMATICAS'], as: 'condiciones' },
-          { model: sequelize.models['AGROMO_DETALLES_QUIMICOS'], as: 'quimicos' },
-          { model: sequelize.models['AGROMO_FOTOGRAFIA'], as: 'fotos' }
-        ]
-      });
-      return forms.map((f: any) => ({ ...f.toJSON(), __tenant: tenant, __form: 'formulario' }));
-    } else {
-      // For biomo/robo
+      // Agromo has complex relationships and uses id_usuario
+      modelName = 'AGROMO_FORMULARIO';
+      whereCondition = { id_usuario: userId };
+      includeOptions = [
+        { model: sequelize.models['AGROMO_AGRICULTOR'], as: 'agricultor' },
+        { model: sequelize.models['AGROMO_CULTIVO'], as: 'cultivo' },
+        { model: sequelize.models['AGROMO_CONDICIONES_CLIMATICAS'], as: 'condiciones' },
+        { model: sequelize.models['AGROMO_DETALLES_QUIMICOS'], as: 'quimicos' },
+        { model: sequelize.models['AGROMO_FOTOGRAFIA'], as: 'fotos' }
+      ];
+    } else if (tenant === 'biomo' || tenant === 'robo') {
+      // Biomo/Robo use numbered forms with id_usuario
       const num = this.normalize(formKey);
-      const modelName = this.getFormModelName(tenant, num);
-      const Model = sequelize.models[modelName];
-      if (!Model) throw Object.assign(new Error(`Model ${modelName} not found`), { status: 500 });
-
-      const forms = await Model.findAll({
-        where: { id_usuario: userId }
-      });
-      return forms.map((f: any) => ({ ...f.toJSON(), __tenant: tenant, __form: num }));
+      modelName = `${tenant.toUpperCase()}_FORM_${num}`;
+      whereCondition = { id_usuario: userId };
+    } else {
+      throw Object.assign(new Error(`Unsupported tenant '${tenant}'`), { status: 400 });
     }
+
+    const Model = sequelize.models[modelName];
+    if (!Model) {
+      throw Object.assign(new Error(`Model '${modelName}' not found for tenant '${tenant}'`), { status: 500 });
+    }
+
+    const forms = await Model.findAll({
+      where: whereCondition,
+      include: includeOptions
+    });
+
+    return forms.map((f: any) => ({ ...f.toJSON(), __tenant: tenant, __form: formKey }));
   }
 
   // Get specific form by ID
   async getById(sequelize: any, tenant: string, formKey: string, formId: number) {
+    let modelName: string;
+    let includeOptions: any[] = [];
+
     if (tenant === 'agromo') {
-      const Model = sequelize.models['AGROMO_FORMULARIO'];
-      if (!Model) throw Object.assign(new Error('AGROMO_FORMULARIO model not found'), { status: 500 });
-
-      const form = await Model.findByPk(formId, {
-        include: [
-          { model: sequelize.models['AGROMO_AGRICULTOR'], as: 'agricultor' },
-          { model: sequelize.models['AGROMO_CULTIVO'], as: 'cultivo' },
-          { model: sequelize.models['AGROMO_CONDICIONES_CLIMATICAS'], as: 'condiciones' },
-          { model: sequelize.models['AGROMO_DETALLES_QUIMICOS'], as: 'quimicos' },
-          { model: sequelize.models['AGROMO_FOTOGRAFIA'], as: 'fotos' }
-        ]
-      });
-      return form ? { ...form.toJSON(), __tenant: tenant, __form: 'formulario' } : null;
-    } else {
+      modelName = 'AGROMO_FORMULARIO';
+      includeOptions = [
+        { model: sequelize.models['AGROMO_AGRICULTOR'], as: 'agricultor' },
+        { model: sequelize.models['AGROMO_CULTIVO'], as: 'cultivo' },
+        { model: sequelize.models['AGROMO_CONDICIONES_CLIMATICAS'], as: 'condiciones' },
+        { model: sequelize.models['AGROMO_DETALLES_QUIMICOS'], as: 'quimicos' },
+        { model: sequelize.models['AGROMO_FOTOGRAFIA'], as: 'fotos' }
+      ];
+    } else if (tenant === 'biomo' || tenant === 'robo') {
       const num = this.normalize(formKey);
-      const modelName = this.getFormModelName(tenant, num);
-      const Model = sequelize.models[modelName];
-      if (!Model) throw Object.assign(new Error(`Model ${modelName} not found`), { status: 500 });
-
-      const form = await Model.findByPk(formId);
-      return form ? { ...form.toJSON(), __tenant: tenant, __form: num } : null;
+      modelName = `${tenant.toUpperCase()}_FORM_${num}`;
+    } else {
+      throw Object.assign(new Error(`Unsupported tenant '${tenant}'`), { status: 400 });
     }
+
+    const Model = sequelize.models[modelName];
+    if (!Model) {
+      throw Object.assign(new Error(`Model '${modelName}' not found for tenant '${tenant}'`), { status: 500 });
+    }
+
+    const form = await Model.findByPk(formId, { include: includeOptions });
+    return form ? { ...form.toJSON(), __tenant: tenant, __form: formKey } : null;
   }
 
   // Update form
   async update(sequelize: any, tenant: string, formKey: string, formId: number, data: any) {
+    let modelName: string;
+    let whereClause: any;
+
     if (tenant === 'agromo') {
-      const Model = sequelize.models['AGROMO_FORMULARIO'];
-      if (!Model) throw Object.assign(new Error('AGROMO_FORMULARIO model not found'), { status: 500 });
-
-      const [affectedRows] = await Model.update(data, { where: { id_formulario: formId } });
-      if (affectedRows === 0) throw Object.assign(new Error('Form not found'), { status: 404 });
-      return this.getById(sequelize, tenant, formKey, formId);
-    } else {
+      modelName = 'AGROMO_FORMULARIO';
+      whereClause = { id_formulario: formId };
+    } else if (tenant === 'biomo' || tenant === 'robo') {
       const num = this.normalize(formKey);
-      const modelName = this.getFormModelName(tenant, num);
-      const Model = sequelize.models[modelName];
-      if (!Model) throw Object.assign(new Error(`Model ${modelName} not found`), { status: 500 });
-
-      const [affectedRows] = await Model.update(data, { where: { id: formId } });
-      if (affectedRows === 0) throw Object.assign(new Error('Form not found'), { status: 404 });
-      return this.getById(sequelize, tenant, formKey, formId);
+      modelName = `${tenant.toUpperCase()}_FORM_${num}`;
+      whereClause = { id: formId };
+    } else {
+      throw Object.assign(new Error(`Unsupported tenant '${tenant}'`), { status: 400 });
     }
+
+    const Model = sequelize.models[modelName];
+    if (!Model) {
+      throw Object.assign(new Error(`Model '${modelName}' not found for tenant '${tenant}'`), { status: 500 });
+    }
+
+    const [affectedRows] = await Model.update(data, { where: whereClause });
+    if (affectedRows === 0) {
+      throw Object.assign(new Error('Form not found or no changes made'), { status: 404 });
+    }
+
+    return await this.getById(sequelize, tenant, formKey, formId);
   }
 
   // Delete form
   async delete(sequelize: any, tenant: string, formKey: string, formId: number) {
+    let modelName: string;
+    let whereClause: any;
+
     if (tenant === 'agromo') {
-      const Model = sequelize.models['AGROMO_FORMULARIO'];
-      if (!Model) throw Object.assign(new Error('AGROMO_FORMULARIO model not found'), { status: 500 });
-
-      const deleted = await Model.destroy({ where: { id_formulario: formId } });
-      return deleted > 0;
-    } else {
+      modelName = 'AGROMO_FORMULARIO';
+      whereClause = { id_formulario: formId };
+    } else if (tenant === 'biomo' || tenant === 'robo') {
       const num = this.normalize(formKey);
-      const modelName = this.getFormModelName(tenant, num);
-      const Model = sequelize.models[modelName];
-      if (!Model) throw Object.assign(new Error(`Model ${modelName} not found`), { status: 500 });
-
-      const deleted = await Model.destroy({ where: { id: formId } });
-      return deleted > 0;
+      modelName = `${tenant.toUpperCase()}_FORM_${num}`;
+      whereClause = { id: formId };
+    } else {
+      throw Object.assign(new Error(`Unsupported tenant '${tenant}'`), { status: 400 });
     }
+
+    const Model = sequelize.models[modelName];
+    if (!Model) {
+      throw Object.assign(new Error(`Model '${modelName}' not found for tenant '${tenant}'`), { status: 500 });
+    }
+
+    const deleted = await Model.destroy({ where: whereClause });
+    return deleted > 0;
   }
 
   // List all forms for a user across all form types

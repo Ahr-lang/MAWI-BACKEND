@@ -90,7 +90,7 @@ async function connectDB() {
         const sequelize = getSequelize(tenant);
         await sequelize.authenticate();
 
-        await sequelize.sync();
+        // await sequelize.sync(); // Disabled to prevent automatic schema changes
 
         connected = true;
       } catch (err) {

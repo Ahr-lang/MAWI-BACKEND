@@ -51,8 +51,9 @@ export function registerAgromoForms(sequelize: Sequelize) {
     datos_clima: DataTypes.TEXT,
     observaciones: DataTypes.TEXT,
     estado_conexion: { type: DataTypes.BOOLEAN, defaultValue: false },
-    id_agricultor: { type: DataTypes.INTEGER, references: { model: 'AGROMO_AGRICULTOR', key: 'id_agricultor' } },
-    id_cultivo: { type: DataTypes.INTEGER, references: { model: 'AGROMO_CULTIVO', key: 'id_cultivo' } }
+    id_usuario: { type: DataTypes.INTEGER, allowNull: true }, // User who created the form
+    id_agricultor: { type: DataTypes.INTEGER, allowNull: true, references: { model: 'AGROMO_AGRICULTOR', key: 'id_agricultor' } },
+    id_cultivo: { type: DataTypes.INTEGER, allowNull: true, references: { model: 'AGROMO_CULTIVO', key: 'id_cultivo' } }
   }, { tableName: 'formulario', schema: 'public', freezeTableName: true, timestamps: false });
 
   // Condiciones Climaticas
