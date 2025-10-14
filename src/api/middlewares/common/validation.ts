@@ -3,7 +3,7 @@ import { Request, Response, NextFunction } from 'express';
 import { trace, SpanStatusCode } from '@opentelemetry/api';
 import Ajv from 'ajv';
 import addFormats from 'ajv-formats';
-import specs from '../../config/swagger';
+import specs from '../../../config/swagger';
 
 // Configurar AJV con validación de todos los errores y formatos
 const ajv = new Ajv({

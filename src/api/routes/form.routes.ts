@@ -1,15 +1,33 @@
 // src/api/routes/form.routes.ts
 import { Router } from 'express';
-import { createSubmission } from '../controllers/form.controller';
-import { useTenant } from "../middlewares/tenant";
-import verifyApiKey from "../middlewares/verifyApiKey";
-import tenantRateLimit from "../middlewares/rateLimit";
-import { validateRequest } from "../middlewares/validation";
-import { ensureAuthenticated } from '../controllers/user.controller';
+import {
+  createSubmission,
+  getUserForms,
+  getFormById,
+  updateForm,
+  deleteForm,
+  getAllUserForms
+} from '../controllers/form.controller';
+import { protectAuth } from "../middlewares/protect";
 
 const router = Router();
 
-router.post("/:tenant/forms/:formKey/submission", verifyApiKey, tenantRateLimit, useTenant, validateRequest, ensureAuthenticated, createSubmission);
+// Create new form submission
+router.post("/:tenant/forms/:formKey/submission", ...protectAuth, createSubmission);
 
+// Get all forms of a specific type for the authenticated user
+router.get("/:tenant/forms/:formKey", ...protectAuth, getUserForms);
+
+// Get all forms across all types for the authenticated user
+router.get("/:tenant/forms", ...protectAuth, getAllUserForms);
+
+// Get specific form by ID
+router.get("/:tenant/forms/:formKey/:formId", ...protectAuth, getFormById);
+
+// Update specific form
+router.put("/:tenant/forms/:formKey/:formId", ...protectAuth, updateForm);
+
+// Delete specific form
+router.delete("/:tenant/forms/:formKey/:formId", ...protectAuth, deleteForm);
 
 export default router;

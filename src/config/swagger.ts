@@ -55,6 +55,384 @@ const extraPaths = {
         500: { description: "Error del servidor" }
       }
     }
+  },
+  "/api/{tenant}/forms/{formKey}/submission": {
+    post: {
+      summary: "Crear envío de formulario",
+      tags: ["Formularios"],
+      parameters: [
+        {
+          in: "path",
+          name: "tenant",
+          required: true,
+          schema: {
+            type: "string",
+            enum: ["agromo", "biomo", "robo"]
+          },
+          description: "Tenant del formulario"
+        },
+        {
+          in: "path",
+          name: "formKey",
+          required: true,
+          schema: {
+            type: "string",
+            enum: ["1", "2", "3", "4", "5", "6", "7", "formulario"]
+          },
+          description: "Tipo de formulario"
+        }
+      ],
+      security: [
+        {
+          bearerAuth: [],
+          "Tenant API Key": []
+        }
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              description: "Datos del formulario",
+              additionalProperties: true,
+              example: {
+                nombre: "Juan Pérez",
+                fecha: "2025-10-14",
+                observaciones: "Formulario de ejemplo"
+              }
+            }
+          }
+        }
+      },
+      responses: {
+        201: {
+          description: "Formulario creado exitosamente",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  message: { type: "string", example: "Submission created" },
+                  tenant: { type: "string", example: "biomo" },
+                  formKey: { type: "string", example: "1" },
+                  data: { type: "object", description: "Datos del formulario creado" }
+                }
+              }
+            }
+          }
+        },
+        400: { description: "Datos inválidos" },
+        401: { description: "No autorizado" },
+        500: { description: "Error del servidor" }
+      }
+    }
+  },
+  "/api/{tenant}/forms/{formKey}": {
+    get: {
+      summary: "Obtener formularios de un tipo específico del usuario",
+      tags: ["Formularios"],
+      parameters: [
+        {
+          in: "path",
+          name: "tenant",
+          required: true,
+          schema: {
+            type: "string",
+            enum: ["agromo", "biomo", "robo"]
+          },
+          description: "Tenant del formulario"
+        },
+        {
+          in: "path",
+          name: "formKey",
+          required: true,
+          schema: {
+            type: "string",
+            enum: ["1", "2", "3", "4", "5", "6", "7", "formulario"]
+          },
+          description: "Tipo de formulario"
+        }
+      ],
+      security: [
+        {
+          bearerAuth: [],
+          "Tenant API Key": []
+        }
+      ],
+      responses: {
+        200: {
+          description: "Formularios obtenidos exitosamente",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  message: { type: "string", example: "User forms retrieved" },
+                  tenant: { type: "string", example: "biomo" },
+                  formKey: { type: "string", example: "1" },
+                  userId: { type: "number", example: 123 },
+                  data: {
+                    type: "array",
+                    items: { type: "object", description: "Datos del formulario" }
+                  },
+                  count: { type: "number", example: 5 }
+                }
+              }
+            }
+          }
+        },
+        401: { description: "No autorizado" },
+        500: { description: "Error del servidor" }
+      }
+    }
+  },
+  "/api/{tenant}/forms": {
+    get: {
+      summary: "Obtener todos los formularios del usuario",
+      tags: ["Formularios"],
+      parameters: [
+        {
+          in: "path",
+          name: "tenant",
+          required: true,
+          schema: {
+            type: "string",
+            enum: ["agromo", "biomo", "robo"]
+          },
+          description: "Tenant del formulario"
+        }
+      ],
+      security: [
+        {
+          bearerAuth: [],
+          "Tenant API Key": []
+        }
+      ],
+      responses: {
+        200: {
+          description: "Todos los formularios obtenidos exitosamente",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  message: { type: "string", example: "All user forms retrieved" },
+                  tenant: { type: "string", example: "biomo" },
+                  userId: { type: "number", example: 123 },
+                  data: {
+                    type: "array",
+                    items: { type: "object", description: "Datos del formulario" }
+                  },
+                  count: { type: "number", example: 15 }
+                }
+              }
+            }
+          }
+        },
+        401: { description: "No autorizado" },
+        500: { description: "Error del servidor" }
+      }
+    }
+  },
+  "/api/{tenant}/forms/{formKey}/{formId}": {
+    get: {
+      summary: "Obtener formulario específico por ID",
+      tags: ["Formularios"],
+      parameters: [
+        {
+          in: "path",
+          name: "tenant",
+          required: true,
+          schema: {
+            type: "string",
+            enum: ["agromo", "biomo", "robo"]
+          },
+          description: "Tenant del formulario"
+        },
+        {
+          in: "path",
+          name: "formKey",
+          required: true,
+          schema: {
+            type: "string",
+            enum: ["1", "2", "3", "4", "5", "6", "7", "formulario"]
+          },
+          description: "Tipo de formulario"
+        },
+        {
+          in: "path",
+          name: "formId",
+          required: true,
+          schema: { type: "integer" },
+          description: "ID del formulario"
+        }
+      ],
+      security: [
+        {
+          bearerAuth: [],
+          "Tenant API Key": []
+        }
+      ],
+      responses: {
+        200: {
+          description: "Formulario obtenido exitosamente",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  message: { type: "string", example: "Form retrieved" },
+                  tenant: { type: "string", example: "biomo" },
+                  formKey: { type: "string", example: "1" },
+                  data: { type: "object", description: "Datos del formulario" }
+                }
+              }
+            }
+          }
+        },
+        404: { description: "Formulario no encontrado" },
+        401: { description: "No autorizado" },
+        500: { description: "Error del servidor" }
+      }
+    },
+    put: {
+      summary: "Actualizar formulario específico",
+      tags: ["Formularios"],
+      parameters: [
+        {
+          in: "path",
+          name: "tenant",
+          required: true,
+          schema: {
+            type: "string",
+            enum: ["agromo", "biomo", "robo"]
+          },
+          description: "Tenant del formulario"
+        },
+        {
+          in: "path",
+          name: "formKey",
+          required: true,
+          schema: {
+            type: "string",
+            enum: ["1", "2", "3", "4", "5", "6", "7", "formulario"]
+          },
+          description: "Tipo de formulario"
+        },
+        {
+          in: "path",
+          name: "formId",
+          required: true,
+          schema: { type: "integer" },
+          description: "ID del formulario"
+        }
+      ],
+      security: [
+        {
+          bearerAuth: [],
+          "Tenant API Key": []
+        }
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              type: "object",
+              description: "Datos a actualizar",
+              additionalProperties: true,
+              example: {
+                observaciones: "Formulario actualizado",
+                fecha: "2025-10-15"
+              }
+            }
+          }
+        }
+      },
+      responses: {
+        200: {
+          description: "Formulario actualizado exitosamente",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  message: { type: "string", example: "Form updated" },
+                  tenant: { type: "string", example: "biomo" },
+                  formKey: { type: "string", example: "1" },
+                  data: { type: "object", description: "Datos actualizados del formulario" }
+                }
+              }
+            }
+          }
+        },
+        404: { description: "Formulario no encontrado" },
+        400: { description: "Datos inválidos" },
+        401: { description: "No autorizado" },
+        500: { description: "Error del servidor" }
+      }
+    },
+    delete: {
+      summary: "Eliminar formulario específico",
+      tags: ["Formularios"],
+      parameters: [
+        {
+          in: "path",
+          name: "tenant",
+          required: true,
+          schema: {
+            type: "string",
+            enum: ["agromo", "biomo", "robo"]
+          },
+          description: "Tenant del formulario"
+        },
+        {
+          in: "path",
+          name: "formKey",
+          required: true,
+          schema: {
+            type: "string",
+            enum: ["1", "2", "3", "4", "5", "6", "7", "formulario"]
+          },
+          description: "Tipo de formulario"
+        },
+        {
+          in: "path",
+          name: "formId",
+          required: true,
+          schema: { type: "integer" },
+          description: "ID del formulario"
+        }
+      ],
+      security: [
+        {
+          bearerAuth: [],
+          "Tenant API Key": []
+        }
+      ],
+      responses: {
+        200: {
+          description: "Formulario eliminado exitosamente",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  message: { type: "string", example: "Form deleted" },
+                  tenant: { type: "string", example: "biomo" },
+                  formKey: { type: "string", example: "1" },
+                  formId: { type: "string", example: "123" }
+                }
+              }
+            }
+          }
+        },
+        404: { description: "Formulario no encontrado" },
+        401: { description: "No autorizado" },
+        500: { description: "Error del servidor" }
+      }
+    }
   }
 };
 
@@ -76,11 +454,21 @@ const options: any = {
   definition: {
     openapi: "3.0.0",
     info: {
-      title: "API de Autenticación",
+      title: "API de Autenticación y Formularios",
       version: "1.0.0",
       description:
-        "Documentación de la API de autenticación con Node.js, Express, Passport y JWT.",
+        "Documentación de la API de autenticación y formularios con Node.js, Express, Passport y JWT.",
     },
+    tags: [
+      {
+        name: "Autenticación",
+        description: "Endpoints para autenticación de usuarios",
+      },
+      {
+        name: "Formularios",
+        description: "Endpoints para gestión de formularios",
+      },
+    ],
     // Keep servers list minimal & de-duped to avoid UI confusion.
     servers: [
       { url: API_BASE, description: "Configured base" },

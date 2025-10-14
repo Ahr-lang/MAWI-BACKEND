@@ -6,16 +6,6 @@ import { signToken } from "../../services/auth.service";
 import UserService from "../../services/user.service";
 import { trace, SpanStatusCode } from '@opentelemetry/api';
 
-// Función para asegurar que el usuario esté autenticado
-function ensureAuthenticated(req: any, res: any, next: any) {
-  passport.authenticate("jwt", { session: false }, (err: any, user: any) => {
-    if (err) return res.status(401).json({ error: "Invalid token" });
-    if (!user) return res.status(401).json({ error: "Unauthorized" });
-    req.user = user;
-    next();
-  })(req, res, next);
-}
-
 // Función para registrar un nuevo usuario
 async function register(req: any, res: any) {
   const span = trace.getActiveSpan();
@@ -153,4 +143,4 @@ async function getUsers(req: any, res: any) {
 }
 
 // Exportamos las funciones
-export { ensureAuthenticated, register, login, me, logout, getUsers };
+export { register, login, me, logout, getUsers };

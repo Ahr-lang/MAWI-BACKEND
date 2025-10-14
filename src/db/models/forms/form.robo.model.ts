@@ -20,6 +20,7 @@ export function registerRoboForms(sequelize: Sequelize) {
     temperaturaminima: DataTypes.STRING,
     fecha: DataTypes.STRING,
     editado: DataTypes.STRING,
+    id_usuario: { type: DataTypes.INTEGER, allowNull: false, references: { model: 'users', key: 'id' } }
   }, { tableName: 'formulario1', schema: 'public', freezeTableName: true, timestamps: false });
 
   // formulario2
@@ -42,6 +43,7 @@ export function registerRoboForms(sequelize: Sequelize) {
     temperaturaminima: DataTypes.STRING,
     fecha: DataTypes.STRING,
     editado: DataTypes.STRING,
+    id_usuario: { type: DataTypes.INTEGER, allowNull: false, references: { model: 'users', key: 'id' } }
   }, { tableName: 'formulario2', schema: 'public', freezeTableName: true, timestamps: false });
 
   // formulario3
@@ -63,6 +65,7 @@ export function registerRoboForms(sequelize: Sequelize) {
     temperaturaminima: DataTypes.STRING,
     fecha: DataTypes.STRING,
     editado: DataTypes.STRING,
+    id_usuario: { type: DataTypes.INTEGER, allowNull: false, references: { model: 'users', key: 'id' } }
   }, { tableName: 'formulario3', schema: 'public', freezeTableName: true, timestamps: false });
 
   // formulario4
@@ -90,6 +93,7 @@ export function registerRoboForms(sequelize: Sequelize) {
     temperaturaminima: DataTypes.STRING,
     fecha: DataTypes.STRING,
     editado: DataTypes.STRING,
+    id_usuario: { type: DataTypes.INTEGER, allowNull: false, references: { model: 'users', key: 'id' } }
   }, { tableName: 'formulario4', schema: 'public', freezeTableName: true, timestamps: false });
 
   // formulario5
@@ -112,6 +116,7 @@ export function registerRoboForms(sequelize: Sequelize) {
     temperaturaminima: DataTypes.STRING,
     fecha: DataTypes.STRING,
     editado: DataTypes.STRING,
+    id_usuario: { type: DataTypes.INTEGER, allowNull: false, references: { model: 'users', key: 'id' } }
   }, { tableName: 'formulario5', schema: 'public', freezeTableName: true, timestamps: false });
 
   // formulario6
@@ -137,6 +142,7 @@ export function registerRoboForms(sequelize: Sequelize) {
     temperaturaminima: DataTypes.STRING,
     fecha: DataTypes.STRING,
     editado: DataTypes.STRING,
+    id_usuario: { type: DataTypes.INTEGER, allowNull: false, references: { model: 'users', key: 'id' } }
   }, { tableName: 'formulario6', schema: 'public', freezeTableName: true, timestamps: false });
 
   // formulario7
@@ -154,5 +160,6 @@ export function registerRoboForms(sequelize: Sequelize) {
     longitude: DataTypes.DOUBLE,
     fecha: DataTypes.STRING,
     editado: DataTypes.STRING,
+    id_usuario: { type: DataTypes.INTEGER, allowNull: false, references: { model: 'users', key: 'id' } }
   }, { tableName: 'formulario7', schema: 'public', freezeTableName: true, timestamps: false });
 }

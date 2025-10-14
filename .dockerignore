@@ -1,3 +1,4 @@
+#Se usa en el folder de docker para ignorar archivos y carpetas que no se quieren incluir en la imagen de docker
 # Exclude version control
 .git
 .gitignore

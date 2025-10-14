@@ -1,5 +1,5 @@
 // Importamos funciones de db/index.js
-import { getPool, getSequelize, TENANTS } from "../../db/index";
+import { getPool, getSequelize, TENANTS } from "../../../db/index";
 
 // Middleware para configurar el tenant (base de datos) basado en la ruta
 function useTenant(req: any, res: any, next: any) {
