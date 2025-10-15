@@ -7,6 +7,7 @@ services:
     image: mawi-backend:latest
     environment:
       - PORT=3000
+      - OTEL_SERVICE_NAME=mawi-backend
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
       - DB_HOST=${DB_HOST}
