@@ -54,7 +54,7 @@ services:
       - "9090:9090"
     volumes:
       - ./observability/prometheus.yml:/etc/prom.yml
-    command: ["--config.file=/etc/prom.yml"]
+    command: ["--config.file=/etc/prom.yml", "--web.enable-remote-write-receiver"]
     restart: unless-stopped
   grafana:
     image: grafana/grafana:latest
