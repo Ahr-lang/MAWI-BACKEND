@@ -30,4 +30,19 @@ export default class UserService {
   static async getAllUsers(sequelize: any) {
     return await UserRepository.getAllUsers(sequelize);
   }
+
+  // Método para obtener todos los usuarios con conteo de formularios
+  static async getUsersWithFormCounts(sequelize: any, tenant: string) {
+    return await UserRepository.getUsersWithFormCounts(sequelize, tenant);
+  }
+
+  // Obtener un usuario por identificador (username o email)
+  static async getUserByIdentifier(sequelize: any, identifier: string) {
+    return await UserRepository.findByUsername(sequelize, identifier);
+  }
+
+  // Buscar usuario por email en un tenant
+  static async findUserByEmail(sequelize: any, email: string) {
+    return await UserRepository.findByEmail(sequelize, email);
+  }
 }

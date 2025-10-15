@@ -1,15 +1,14 @@
 class FormRepository {
 
   // Normalize form key (formulario1 -> 1, 1 -> 1, etc.)
-  private normalize(formKey: string): number {
+  private normalize(formKey: string): string {
     const k = (formKey || '').toLowerCase();
     const n = k.startsWith('formulario') ? k.replace('formulario','') : k;
     const num = Number(n);
     if (!Number.isInteger(num) || num < 1 || num > 7) {
-      const e: any = new Error('Invalid formKey (allowed: 1..7 or formulario1..7)');
-      e.status = 400; throw e;
+     return k;
     }
-    return num;
+    return n;
   }
 
   // Insert data into specific form table
@@ -191,6 +190,11 @@ class FormRepository {
     }
 
     return results;
+  }
+
+  // Get all forms for a specific user (admin function - can specify any userId)
+  async getAllFormsForUser(sequelize: any, tenant: string, targetUserId: number) {
+    return await this.getAllUserForms(sequelize, tenant, targetUserId);
   }
 }
 

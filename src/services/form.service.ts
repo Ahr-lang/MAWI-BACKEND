@@ -55,5 +55,13 @@ class FormService {
 
     return await FormRepository.getAllUserForms(sequelize, tenant, userId);
   }
+
+  async getAllFormsForUser(sequelize: any, tenant: string, targetUserId: number) {
+    const span = trace.getActiveSpan();
+    span?.setAttribute('app.tenant', tenant);
+    span?.setAttribute('app.target.user.id', targetUserId);
+
+    return await FormRepository.getAllFormsForUser(sequelize, tenant, targetUserId);
+  }
 }
 export default new FormService();

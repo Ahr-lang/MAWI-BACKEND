@@ -42,13 +42,70 @@ export default class UserRepository {
     return { id: user.id, username: user.username, user_email: user.user_email };
   }
 
-  // Método para obtener todos los usuarios de un tenant (solo username)
+  // Método para obtener todos los usuarios de un tenant (con ID, username y email)
   static async getAllUsers(sequelize: any) {
     const User = sequelize.models.User;
     const users = await User.findAll({
-      attributes: ['username'], // Solo retornamos username
+      attributes: ['id', 'username', 'user_email'], // Retornamos id, username y email
       order: [['username', 'ASC']] // Ordenamos alfabéticamente
     });
-    return users.map((user: any) => ({ username: user.username }));
+    return users.map((user: any) => ({ 
+      id: user.id, 
+      username: user.username, 
+      user_email: user.user_email 
+    }));
+  }
+
+  // Método para obtener todos los usuarios con el conteo de sus formularios
+  static async getUsersWithFormCounts(sequelize: any, tenant: string) {
+    const User = sequelize.models.User;
+    const users = await User.findAll({
+      attributes: ['id', 'username', 'user_email'],
+      order: [['username', 'ASC']]
+    });
+
+    // Para cada usuario, contar sus formularios
+    const usersWithCounts = await Promise.all(users.map(async (user: any) => {
+      let formCount = 0;
+
+      if (tenant === 'agromo') {
+        // Para agromo, contar formularios en AGROMO_FORMULARIO
+        const Formulario = sequelize.models.AGROMO_FORMULARIO;
+        if (Formulario) {
+          formCount = await Formulario.count({
+            where: { id_usuario: user.id }
+          });
+        }
+      } else if (tenant === 'biomo' || tenant === 'robo') {
+        // Para biomo/robo, contar en todas las tablas de formularios (1-7)
+        for (let i = 1; i <= 7; i++) {
+          const modelName = `${tenant.toUpperCase()}_FORM_${i}`;
+          const FormModel = sequelize.models[modelName];
+          if (FormModel) {
+            const count = await FormModel.count({
+              where: { id_usuario: user.id }
+            });
+            formCount += count;
+          }
+        }
+      }
+
+      return {
+        id: user.id,
+        username: user.username,
+        user_email: user.user_email,
+        forms_count: formCount
+      };
+    }));
+
+    return usersWithCounts;
+  }
+
+  // Método para encontrar usuario por email (devuelve id, username y email)
+  static async findByEmail(sequelize: any, email: string) {
+    const User = sequelize.models.User;
+    if (!email) return null;
+    const user = await User.findOne({ where: { user_email: email.toLowerCase() } });
+    return user ? { id: user.id, username: user.username, user_email: user.user_email } : null;
   }
 }

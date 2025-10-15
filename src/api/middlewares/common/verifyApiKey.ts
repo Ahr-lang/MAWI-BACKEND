@@ -20,7 +20,19 @@ function verifyApiKey(req: any, res: any, next: any) {
     return res.status(403).json({ error: 'API key inválida' });
   }
 
-  // Verifica que coincida con el tenant de la URL (opcional, pero refuerza)
+  // Excepción para rutas de administración: usuarios del tenant "back" pueden usar su API key
+  // para acceder a datos de otros tenants
+  const isAdminRoute = req.path.includes('/admin/');
+  const isBackTenantApiKey = tenant === 'back';
+
+  if (isAdminRoute && isBackTenantApiKey) {
+    // Para rutas de admin con API key del tenant "back", permitimos acceder a cualquier tenant
+    // El tenant real se determina por la URL, no por la API key
+    req.tenant = req.params.tenant;
+    return next();
+  }
+
+  // Verifica que coincida con el tenant de la URL (para rutas normales)
   if (req.params.tenant && req.params.tenant !== tenant) {
     return res.status(403).json({ error: 'API key no coincide con tenant' });
   }

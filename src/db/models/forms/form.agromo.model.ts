@@ -95,4 +95,43 @@ export function registerAgromoForms(sequelize: Sequelize) {
     imagen: DataTypes.BLOB,
     creado_en: { type: DataTypes.DATE, defaultValue: DataTypes.NOW }
   }, { tableName: 'chat_ia', schema: 'public', freezeTableName: true, timestamps: false });
+
+  // Define associations
+  const Formulario = sequelize.models['AGROMO_FORMULARIO'];
+  const Agricultor = sequelize.models['AGROMO_AGRICULTOR'];
+  const Cultivo = sequelize.models['AGROMO_CULTIVO'];
+  const Condiciones = sequelize.models['AGROMO_CONDICIONES_CLIMATICAS'];
+  const Quimicos = sequelize.models['AGROMO_DETALLES_QUIMICOS'];
+  const Fotos = sequelize.models['AGROMO_FOTOGRAFIA'];
+  const User = sequelize.models['AGROMO_USER'];
+
+  if (Formulario && Agricultor) {
+    Formulario.belongsTo(Agricultor, { foreignKey: 'id_agricultor', as: 'agricultor' });
+    Agricultor.hasMany(Formulario, { foreignKey: 'id_agricultor' });
+  }
+
+  if (Formulario && Cultivo) {
+    Formulario.belongsTo(Cultivo, { foreignKey: 'id_cultivo', as: 'cultivo' });
+    Cultivo.hasMany(Formulario, { foreignKey: 'id_cultivo' });
+  }
+
+  if (Formulario && Condiciones) {
+    Formulario.hasMany(Condiciones, { foreignKey: 'id_formulario', as: 'condiciones' });
+    Condiciones.belongsTo(Formulario, { foreignKey: 'id_formulario' });
+  }
+
+  if (Formulario && Quimicos) {
+    Formulario.hasMany(Quimicos, { foreignKey: 'id_formulario', as: 'quimicos' });
+    Quimicos.belongsTo(Formulario, { foreignKey: 'id_formulario' });
+  }
+
+  if (Formulario && Fotos) {
+    Formulario.hasMany(Fotos, { foreignKey: 'id_formulario', as: 'fotos' });
+    Fotos.belongsTo(Formulario, { foreignKey: 'id_formulario' });
+  }
+
+  if (Agricultor && User) {
+    Agricultor.belongsTo(User, { foreignKey: 'id_usuario', as: 'usuario' });
+    User.hasMany(Agricultor, { foreignKey: 'id_usuario' });
+  }
 }

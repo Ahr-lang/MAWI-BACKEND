@@ -61,7 +61,7 @@ export async function getUserForms(req: any, res: Response) {
     span?.addEvent('User forms retrieved successfully');
 
     return res.status(200).json({
-      message: 'User forms retrieved',
+      message: forms.length === 0 ? 'No se encontraron formularios de este tipo para este usuario' : 'Formularios del usuario obtenidos exitosamente',
       tenant,
       formKey,
       userId,
@@ -212,7 +212,7 @@ export async function getAllUserForms(req: any, res: Response) {
     span?.addEvent('All user forms retrieved successfully');
 
     return res.status(200).json({
-      message: 'All user forms retrieved',
+      message: forms.length === 0 ? 'No se encontraron formularios para este usuario' : 'Todos los formularios del usuario obtenidos exitosamente',
       tenant,
       userId,
       data: forms,

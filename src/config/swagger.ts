@@ -433,7 +433,305 @@ const extraPaths = {
         500: { description: "Error del servidor" }
       }
     }
-  }
+  },
+  "/api/{tenant}/admin/users": {
+    get: {
+      summary: "Obtener lista completa de usuarios del tenant (solo para usuarios backend)",
+      tags: ["Administración"],
+      description: "Endpoint administrativo que permite a usuarios del tenant 'back' ver todos los usuarios de cualquier tenant con información completa (ID, username, email).",
+      parameters: [
+        {
+          in: "path",
+          name: "tenant",
+          required: true,
+          schema: {
+            type: "string",
+            enum: ["agromo", "biomo", "robo", "back"]
+          },
+          description: "Identificador del tenant a consultar"
+        }
+      ],
+      security: [
+        {
+          bearerAuth: [],
+          "Tenant API Key": []
+        }
+      ],
+      responses: {
+        200: {
+          description: "Lista completa de usuarios obtenida exitosamente",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  message: {
+                    type: "string",
+                    example: "Usuarios obtenidos exitosamente"
+                  },
+                  tenant: { type: "string", example: "biomo" },
+                  data: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        id: { type: "integer", example: 1 },
+                        username: { type: "string", example: "enrique" },
+                        user_email: { type: "string", format: "email", example: "enrique@example.com" }
+                      }
+                    }
+                  },
+                  count: { type: "integer", example: 5 }
+                }
+              }
+            }
+          }
+        },
+        401: { description: "Token inválido o ausente" },
+        403: { description: "Acceso denegado - solo usuarios del tenant backend" },
+        500: { description: "Error del servidor" }
+      }
+    }
+    ,
+    post: {
+      summary: "Crear usuario en un tenant (solo para usuarios backend)",
+      tags: ["Administración"],
+      description: "Endpoint administrativo que permite a usuarios del tenant 'back' crear un nuevo usuario en el tenant objetivo.",
+      parameters: [
+        {
+          in: "path",
+          name: "tenant",
+          required: true,
+          schema: {
+            type: "string",
+            enum: ["agromo", "biomo", "robo", "back"]
+          },
+          description: "Identificador del tenant donde se creará el usuario"
+        }
+      ],
+      security: [
+        {
+          bearerAuth: [],
+          "Tenant API Key": []
+        }
+      ],
+      requestBody: {
+        required: true,
+        content: {
+          "application/json": {
+            schema: {
+              $ref: "#/components/schemas/RegisterCredentials"
+            }
+          }
+        }
+      },
+      responses: {
+        201: {
+          description: "Usuario creado correctamente",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  message: { type: "string", example: "User created successfully" },
+                  tenant: { type: "string", example: "biomo" },
+                  user: { $ref: "#/components/schemas/User" }
+                }
+              }
+            }
+          }
+        },
+        400: { description: "Datos inválidos - faltan campos requeridos" },
+        401: { description: "Token inválido o ausente" },
+        403: { description: "Acceso denegado - solo usuarios del tenant backend" },
+        409: { description: "Username ya existe" },
+        500: { description: "Error del servidor" }
+      }
+    }
+  },
+  "/api/{tenant}/admin/users/forms": {
+    get: {
+      summary: "Obtener usuarios con conteo de formularios (solo para usuarios backend)",
+      tags: ["Administración"],
+      description: "Endpoint administrativo que permite a usuarios del tenant 'back' ver todos los usuarios de cualquier tenant junto con el número total de formularios que han creado.",
+      parameters: [
+        {
+          in: "path",
+          name: "tenant",
+          required: true,
+          schema: {
+            type: "string",
+            enum: ["agromo", "biomo", "robo", "back"]
+          },
+          description: "Identificador del tenant a consultar"
+        }
+      ],
+      security: [
+        {
+          bearerAuth: [],
+          "Tenant API Key": []
+        }
+      ],
+      responses: {
+        200: {
+          description: "Usuarios con conteo de formularios obtenidos exitosamente",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  message: {
+                    type: "string",
+                    example: "Usuarios con formularios obtenidos exitosamente"
+                  },
+                  tenant: { type: "string", example: "agromo" },
+                  data: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        id: { type: "integer", example: 1 },
+                        username: { type: "string", example: "enrique" },
+                        user_email: { type: "string", format: "email", example: "enrique@example.com" },
+                        forms_count: { type: "integer", example: 3 }
+                      }
+                    }
+                  },
+                  count: { type: "integer", example: 5 }
+                }
+              }
+            }
+          }
+        },
+        401: { description: "Token inválido o ausente" },
+        403: { description: "Acceso denegado - solo usuarios del tenant backend" },
+        500: { description: "Error del servidor" }
+      }
+    }
+  },
+  "/api/{tenant}/admin/users/{userId}/forms": {
+    get: {
+      summary: "Obtener todos los formularios de un usuario específico (solo para usuarios backend)",
+      tags: ["Administración"],
+      description: "Endpoint administrativo que permite a usuarios del tenant 'back' ver todos los formularios creados por un usuario específico de cualquier tenant.",
+      parameters: [
+        {
+          in: "path",
+          name: "tenant",
+          required: true,
+          schema: {
+            type: "string",
+            enum: ["agromo", "biomo", "robo", "back"]
+          },
+          description: "Identificador del tenant a consultar"
+        },
+        {
+          in: "path",
+          name: "userId",
+          required: true,
+          schema: { type: "integer" },
+          description: "ID del usuario cuyos formularios se quieren consultar"
+        }
+      ],
+      security: [
+        {
+          bearerAuth: [],
+          "Tenant API Key": []
+        }
+      ],
+      responses: {
+        200: {
+          description: "Formularios del usuario obtenidos exitosamente",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  message: {
+                    type: "string",
+                    example: "Formularios del usuario obtenidos exitosamente"
+                  },
+                  tenant: { type: "string", example: "biomo" },
+                  userId: { type: "integer", example: 123 },
+                  data: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      description: "Datos del formulario (estructura dinámica según tenant y tipo)",
+                      additionalProperties: true
+                    }
+                  },
+                  count: { type: "integer", example: 2 }
+                }
+              }
+            }
+          }
+        },
+        401: { description: "Token inválido o ausente" },
+        403: { description: "Acceso denegado - solo usuarios del tenant backend" },
+        500: { description: "Error del servidor" }
+      }
+    }
+  },
+  "/api/{tenant}/admin/users/email/{email}": {
+    get: {
+      summary: "Obtener actividad y formularios de un usuario por email (solo para usuarios backend)",
+      tags: ["Administración"],
+      description: "Endpoint administrativo que permite a usuarios del tenant 'back' buscar un usuario por su email (o identificador) en cualquier tenant y obtener todos sus formularios.",
+      parameters: [
+        {
+          in: "path",
+          name: "tenant",
+          required: true,
+          schema: {
+            type: "string",
+            enum: ["agromo", "biomo", "robo", "back"]
+          },
+          description: "Identificador del tenant a consultar"
+        },
+        {
+          in: "path",
+          name: "email",
+          required: true,
+          schema: { type: "string", format: "email" },
+          description: "Email o identificador del usuario a buscar"
+        }
+      ],
+      security: [
+        {
+          bearerAuth: [],
+          "Tenant API Key": []
+        }
+      ],
+      responses: {
+        200: {
+          description: "Actividad del usuario obtenida exitosamente",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  message: { type: "string", example: "Usuario y formularios obtenidos" },
+                  tenant: { type: "string", example: "biomo" },
+                  user: { $ref: "#/components/schemas/User" },
+                  data: {
+                    type: "array",
+                    description: "Lista de formularios agrupados por tipo/tabla",
+                    items: { type: "object", additionalProperties: true }
+                  },
+                  count: { type: "integer", example: 7 }
+                }
+              }
+            }
+          }
+        },
+        404: { description: "Usuario no encontrado" },
+        401: { description: "Token inválido o ausente" },
+        403: { description: "Acceso denegado - solo usuarios del tenant backend" },
+        500: { description: "Error del servidor" }
+      }
+    }
+  },
 };
 
 /* ---------------------- Normalización de URL del servidor ------------------------ */
@@ -467,6 +765,10 @@ const options: any = {
       {
         name: "Formularios",
         description: "Endpoints para gestión de formularios",
+      },
+      {
+        name: "Administración",
+        description: "Endpoints administrativos para gestión de usuarios y formularios (solo para usuarios backend)",
       },
     ],
     // Keep servers list minimal & de-duped to avoid UI confusion.
