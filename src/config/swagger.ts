@@ -477,7 +477,7 @@ const extraPaths = {
                       properties: {
                         id: { type: "integer", example: 1 },
                         username: { type: "string", example: "enrique" },
-                        user_email: { type: "string", format: "email", example: "enrique@example.com" }
+                        user_email: { type: "string", format: "email", pattern: "^[A-Za-z0-9]+@[A-Za-z0-9]+\.[A-Za-z]+$" , example: "enrique@example.com" }
                       }
                     }
                   },
@@ -592,7 +592,7 @@ const extraPaths = {
                       properties: {
                         id: { type: "integer", example: 1 },
                         username: { type: "string", example: "enrique" },
-                        user_email: { type: "string", format: "email", example: "enrique@example.com" },
+                        user_email: { type: "string", format: "email", pattern: "^[A-Za-z0-9]+@[A-Za-z0-9]+\.[A-Za-z]+$", example: "enrique@example.com" },
                         forms_count: { type: "integer", example: 3 }
                       }
                     }
@@ -800,7 +800,7 @@ const options: any = {
           type: "object",
           required: ["user_email", "password"],
           properties: {
-            user_email: { type: "string", format: "email", example: "enrique@example.com" },
+            user_email: { type: "string", format: "email", pattern: "^[A-Za-z0-9]+@[A-Za-z0-9]+\.[A-Za-z]+$", example: "enrique@example.com" },
             password: { type: "string", example: "ilovemessi3520" },
           },
         },
@@ -819,7 +819,7 @@ const options: any = {
           properties: {
             id: { type: "integer", example: 1 },
             username: { type: "string", example: "enrique" },
-            user_email: { type: "string", format: "email", example: "enrique@example.com" },
+            user_email: { type: "string", format: "email", pattern: "^[A-Za-z0-9]+@[A-Za-z0-9]+\.[A-Za-z]+$", example: "enrique@example.com" },
             lastAccess: { type: "string", format: "date-time", example: "2025-10-07T12:34:56Z" },
             lastLogin: { type: "string", format: "date-time", example: "2025-10-07T12:00:00Z" },
             tenant: { type: "string", example: "agromo" },
