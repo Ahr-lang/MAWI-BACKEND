@@ -793,7 +793,7 @@ const options: any = {
           properties: {
             username: { type: "string", example: "enrique" },
             password: { type: "string", example: "ilovemessi3520" },
-            user_email: { type: "string", format: "email", example: "enrique@example.com" },
+            user_email: { type: "string", format: "email", pattern: "^[A-Za-z0-9]+@[A-Za-z0-9]+\.[A-Za-z]+$", example: "enrique@example.com" },
           },
         },
         LoginCredentials: {
