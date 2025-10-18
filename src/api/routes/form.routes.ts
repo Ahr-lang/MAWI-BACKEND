@@ -1,4 +1,3 @@
-// src/api/routes/form.routes.ts
 import { Router } from 'express';
 import {
   createSubmission,
@@ -9,11 +8,12 @@ import {
   getAllUserForms
 } from '../controllers/form.controller';
 import { protectAuth } from "../middlewares/protect";
+import { uploadSingleImage, uploadToMinio } from "../middlewares/common/minioUpload";
 
 const router = Router();
 
 // Create new form submission
-router.post("/:tenant/forms/:formKey/submission", ...protectAuth, createSubmission);
+router.post("/:tenant/forms/:formKey/submission", ...protectAuth, uploadSingleImage, uploadToMinio,createSubmission);
 
 // Get all forms of a specific type for the authenticated user
 router.get("/:tenant/forms/:formKey", ...protectAuth, getUserForms);

@@ -1,4 +1,3 @@
-// src/services/form.service.ts
 import { trace } from '@opentelemetry/api';
 import FormRepository from '../db/repositories/form.repository';
 
@@ -8,6 +7,8 @@ class FormService {
     span?.setAttribute('app.tenant', tenant);
     span?.setAttribute('app.form.key', formKey);
     if (userId) span?.setAttribute('app.user.id', userId);
+
+  if (payload.imageUrl) span?.setAttribute("app.image.present", true)
 
     return await FormRepository.insert(sequelize, tenant, formKey, payload, userId);
   }
