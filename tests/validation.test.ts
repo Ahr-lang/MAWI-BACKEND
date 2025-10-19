@@ -1,5 +1,5 @@
 // tests/validation.test.ts
-import { validateRequest } from '../src/api/middlewares/validation';
+import { validateRequest } from '../src/api/middlewares/common/validation';
 import { Request, Response, NextFunction } from 'express';
 
 describe('Middleware de Validación', () => {

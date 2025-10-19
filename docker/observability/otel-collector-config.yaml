@@ -6,11 +6,11 @@ receivers:
 
 exporters:
   otlphttp/tempo:
-    endpoint: tempo:4318
+    endpoint: https://tempo:4318
     tls:
       insecure: true
   prometheusremotewrite:
-    endpoint: "http://prometheus:9090/api/v1/write"
+    endpoint: "https://prometheus:9090/api/v1/write"
 
 service:
   pipelines:

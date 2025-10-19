@@ -5,6 +5,7 @@ import { signToken } from "../../services/auth.service";
 // Importamos UserService
 import UserService from "../../services/user.service";
 import { trace, SpanStatusCode } from '@opentelemetry/api';
+import { userRegistrations, loginAttempts, onlineUsers, userSessions } from '../../server';
 
 // Función para registrar un nuevo usuario
 async function register(req: any, res: any) {
@@ -25,6 +26,9 @@ async function register(req: any, res: any) {
 
     span?.setAttribute('user.id', newUser.id);
     span?.addEvent('Usuario registrado exitosamente');
+
+    // Increment user registration counter
+    userRegistrations.inc();
 
     // Respondemos con éxito
     return res.status(201).json({
@@ -65,6 +69,7 @@ function login(req: any, res: any, next: any) {
   span?.setAttribute('user_email', req.body?.user_email);
 
   passport.authenticate("local", { session: false }, (err: any, user: any, info: any) => {
+    const span = trace.getActiveSpan(); // Re-get span inside callback to ensure context
     if (err) {
       span?.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
       span?.recordException(err);
@@ -74,6 +79,10 @@ function login(req: any, res: any, next: any) {
     if (!user) {
       span?.setAttribute('auth.failed', true);
       span?.addEvent('Credenciales inválidas');
+      
+      // Increment failed login attempts
+      loginAttempts.labels('false').inc();
+      
       return res.status(401).json({ error: info?.message || "Invalid credentials" });
     }
 
@@ -81,6 +90,13 @@ function login(req: any, res: any, next: any) {
     span?.setAttribute('user.id', user.id);
     span?.setAttribute('user.username', user.username);
     span?.addEvent('Login exitoso');
+
+    // Increment successful login attempts
+    loginAttempts.labels('true').inc();
+
+    // Track user session and online status
+    userSessions.labels('login').inc();
+    onlineUsers.inc();
 
     // Generamos el token JWT
     const token = signToken({ id: user.id, username: user.username, tenant: user.tenant });
@@ -96,6 +112,11 @@ function login(req: any, res: any, next: any) {
 
 // Función para obtener información del usuario autenticado
 function me(req: any, res: any) {
+  const span = trace.getActiveSpan();
+  span?.setAttribute('operation', 'user.me');
+  span?.setAttribute('tenant', req.tenant);
+  span?.setAttribute('user.id', req.user?.id);
+
   return res.json({
     authenticated: true,
     user: req.user,
@@ -105,6 +126,15 @@ function me(req: any, res: any) {
 
 // Función para cerrar sesión
 function logout(_req: any, res: any) {
+  const span = trace.getActiveSpan();
+  span?.setAttribute('operation', 'user.logout');
+  span?.setAttribute('tenant', _req.tenant);
+  span?.setAttribute('user.id', _req.user?.id);
+
+  // Track user session logout and online status
+  userSessions.labels('logout').inc();
+  onlineUsers.dec();
+  
   return res.json({ message: "Logged out" });
 }
 

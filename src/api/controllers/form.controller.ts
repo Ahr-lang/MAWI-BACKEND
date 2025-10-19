@@ -1,6 +1,7 @@
 import { Request, Response } from 'express';
 import { trace, SpanStatusCode } from '@opentelemetry/api';
 import FormService from '../../services/form.service';
+import { formSubmissions } from '../../server';
 
 export async function createSubmission(req: any, res: Response) {
   const span = trace.getActiveSpan();
@@ -21,6 +22,9 @@ export async function createSubmission(req: any, res: Response) {
 
     span?.setAttribute('submission.id', created.id);
     span?.addEvent('Form submission created successfully');
+
+    // Increment form submission counter
+    formSubmissions.labels(formKey, tenant).inc();
 
     return res.status(201).json({
       message: 'Submission created',
