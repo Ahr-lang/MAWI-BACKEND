@@ -1,7 +1,7 @@
 import { Pool } from 'pg';
 import { Sequelize } from 'sequelize';
 import defineUserModel from './models/user.model';
-import { registerFormsForTenant } from './register-forms';
+import { registerFormsForTenant } from './utils/register-forms';
 import * as dotenv from 'dotenv';
 
 dotenv.config();

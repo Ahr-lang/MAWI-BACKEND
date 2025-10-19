@@ -42,19 +42,20 @@ export function registerAgromoForms(sequelize: Sequelize) {
 
   // Formulario table (main form)
   sequelize.define('AGROMO_FORMULARIO', {
-    id_formulario: { type: DataTypes.INTEGER, primaryKey: true, allowNull: false, autoIncrement: true },
-    nombre_formulario: DataTypes.TEXT,
-    fecha: DataTypes.DATE,
-    hora: DataTypes.TIME,
-    nombre_operador: DataTypes.TEXT,
-    medidas_plantio: DataTypes.TEXT,
-    datos_clima: DataTypes.TEXT,
-    observaciones: DataTypes.TEXT,
-    estado_conexion: { type: DataTypes.BOOLEAN, defaultValue: false },
-    id_usuario: { type: DataTypes.INTEGER, allowNull: true }, // User who created the form
-    id_agricultor: { type: DataTypes.INTEGER, allowNull: true, references: { model: 'AGROMO_AGRICULTOR', key: 'id_agricultor' } },
-    id_cultivo: { type: DataTypes.INTEGER, allowNull: true, references: { model: 'AGROMO_CULTIVO', key: 'id_cultivo' } }
-  }, { tableName: 'formulario', schema: 'public', freezeTableName: true, timestamps: false });
+  id_formulario: { type: DataTypes.INTEGER, primaryKey: true, allowNull: false, autoIncrement: true },
+  nombre_formulario: DataTypes.TEXT,
+  fecha: DataTypes.DATE,
+  hora: DataTypes.TIME,
+  nombre_operador: DataTypes.TEXT,
+  medidas_plantio: DataTypes.TEXT,
+  datos_clima: DataTypes.TEXT,
+  observaciones: DataTypes.TEXT,
+  estado_conexion: { type: DataTypes.BOOLEAN, defaultValue: false },
+  id_usuario: { type: DataTypes.INTEGER, allowNull: true, references: { model: 'users', key: 'id' }, onDelete: 'SET NULL' },
+  id_agricultor: { type: DataTypes.INTEGER, allowNull: true, references: { model: 'AGROMO_AGRICULTOR', key: 'id_agricultor' }, onDelete: 'SET NULL' },
+  id_cultivo: { type: DataTypes.INTEGER, allowNull: true, references: { model: 'AGROMO_CULTIVO', key: 'id_cultivo' }, onDelete: 'SET NULL' },
+  image_url: { type: DataTypes.STRING(500), allowNull: true, defaultValue: null }
+}, { tableName: 'formulario', schema: 'public', freezeTableName: true, timestamps: false });
 
   // Condiciones Climaticas
   sequelize.define('AGROMO_CONDICIONES_CLIMATICAS', {
