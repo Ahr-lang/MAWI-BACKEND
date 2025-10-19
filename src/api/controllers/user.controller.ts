@@ -5,7 +5,7 @@ import { signToken } from "../../services/auth.service";
 // Importamos UserService
 import UserService from "../../services/user.service";
 import { trace, SpanStatusCode } from '@opentelemetry/api';
-import { userRegistrations, loginAttempts, onlineUsers, userSessions } from '../../server';
+import { userRegistrations, loginAttempts, onlineUsers, userSessions } from '../../telemetry/metrics';
 
 // Función para registrar un nuevo usuario
 async function register(req: any, res: any) {
@@ -95,8 +95,9 @@ function login(req: any, res: any, next: any) {
     loginAttempts.labels('true').inc();
 
     // Track user session and online status
-userSessions.labels('login', req.tenant).inc();   // ✅ dos labels: action, tenant
-onlineUsers.labels(req.tenant).inc();             // ✅ incrementa el gauge
+    const tenant = String(req.tenant ?? 'default');
+    userSessions.labels('login', tenant).inc();   // ✅ dos labels: action, tenant
+    onlineUsers.labels(tenant).inc();             // ✅ incrementa el gauge
     // Generamos el token JWT
     const token = signToken({ id: user.id, username: user.username, tenant: user.tenant });
     return res.json({
@@ -131,9 +132,10 @@ function logout(_req: any, res: any) {
   span?.setAttribute('user.id', _req.user?.id);
 
   // Track user session logout and online status
-// Logout:
-userSessions.labels('logout', _req.tenant).inc(); // ✅ dos labels
-onlineUsers.labels(_req.tenant).dec();            // ✅ decrementa el gauge
+  // Logout:
+  const tenant = String(_req.tenant ?? 'default');
+  userSessions.labels('logout', tenant).inc(); // ✅ dos labels
+  onlineUsers.labels(tenant).dec();            // ✅ decrementa el gauge
   
   return res.json({ message: "Logged out" });
 }

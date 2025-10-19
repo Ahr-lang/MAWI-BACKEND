@@ -1,7 +1,7 @@
 import { Request, Response } from 'express';
 import { trace, SpanStatusCode } from '@opentelemetry/api';
 import FormService from '../../services/form.service';
-import { formSubmissions } from '../../server';
+import { formSubmissions } from '../../telemetry/metrics';
 
 export async function createSubmission(req: any, res: Response) {
   const span = trace.getActiveSpan();

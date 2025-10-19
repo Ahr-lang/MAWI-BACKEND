@@ -114,7 +114,7 @@ async function getUserForms(req: any, res: Response) {
 }
 
 // Exportamos las funciones
-export { getAllUsers, getUsersWithForms, getUserForms, createUserAdmin };
+export { getAllUsers, getUsersWithForms, getUserForms, createUserAdmin, getTopUsersByFormType };
 
 // Obtener usuario por email/identifier y sus formularios (admin)
 export async function getUserByEmail(req: any, res: Response) {
@@ -188,5 +188,41 @@ async function createUserAdmin(req: any, res: Response) {
 
     console.error('[AdminCreateUser] Error:', err);
     return res.status(500).json({ error: 'Server error creating user' });
+  }
+}
+
+// Función para obtener el usuario con más formularios de cada tipo (solo para usuarios backend)
+async function getTopUsersByFormType(req: any, res: Response) {
+  const span = trace.getActiveSpan();
+  span?.setAttribute('operation', 'admin.getTopUsersByFormType');
+  span?.setAttribute('tenant', req.tenant);
+  span?.setAttribute('admin.user', req.user?.username);
+
+  const sequelize = req.sequelize;
+  const tenant = req.tenant as string;
+
+  try {
+    span?.addEvent('Obteniendo usuarios con más formularios por tipo para admin');
+
+    // Llamamos al servicio para obtener los usuarios top por tipo de formulario
+    const topUsers = await UserService.getTopUsersByFormType(sequelize, tenant);
+
+    span?.setAttribute('form_types.count', topUsers.length);
+    span?.addEvent('Usuarios top por tipo de formulario obtenidos exitosamente');
+
+    // Respondemos con los resultados
+    return res.status(200).json({
+      message: topUsers.length === 0 ? 'No se encontraron formularios en este tenant' : 'Usuarios top por tipo de formulario obtenidos exitosamente',
+      tenant,
+      data: topUsers,
+      count: topUsers.length
+    });
+  } catch (err: any) {
+    span?.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
+    span?.recordException(err);
+
+    span?.addEvent('Error obteniendo usuarios top por tipo de formulario para admin');
+    console.error("[AdminGetTopUsersByFormType] Error:", err);
+    return res.status(500).json({ error: "Server error getting top users by form type" });
   }
 }

@@ -2,7 +2,7 @@
 import { Router } from "express";
 import { protectAuth } from "../middlewares/protect";
 import { ensureBackendUser } from "../middlewares/common/backendAuth";
-import { getOnlineUsers, getTotalOnlineUsersController } from "../controllers/metrics.controller";
+import { getOnlineUsers, getTotalOnlineUsersController, getFormsMetrics } from "../controllers/metrics.controller";
 
 const router = Router();
 
@@ -10,9 +10,12 @@ const router = Router();
 const adminAuth = [...protectAuth, ensureBackendUser];
 
 // Get online users per tenant (admin only)
-router.get("/metrics/online-users", ...adminAuth, getOnlineUsers);
+router.get("/:tenant/admin/metrics/online-users", ...adminAuth, getOnlineUsers);
 
 // Get total online users across all tenants (admin only)
-router.get("/metrics/online-users/total", ...adminAuth, getTotalOnlineUsersController);
+router.get("/:tenant/admin/metrics/online-users/total", ...adminAuth, getTotalOnlineUsersController);
+
+// Get forms count by tenant and form type (admin only)
+router.get("/:tenant/admin/metrics/forms", ...adminAuth, getFormsMetrics);
 
 export default router;

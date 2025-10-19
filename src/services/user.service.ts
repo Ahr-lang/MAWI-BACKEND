@@ -153,4 +153,28 @@ export default class UserService {
       throw err;
     }
   }
+
+  // Método para obtener el usuario con más formularios de cada tipo
+  static async getTopUsersByFormType(sequelize: any, tenant: string) {
+    const tracer = trace.getTracer('user-service');
+    const span = tracer.startSpan('getTopUsersByFormType');
+    span.setAttribute('operation', 'user.getTopUsersByFormType');
+    span.setAttribute('tenant', tenant);
+
+    try {
+      span.addEvent('Fetching top users by form type');
+
+      const topUsers = await UserRepository.getTopUsersByFormType(sequelize, tenant);
+
+      span.setAttribute('form_types.count', topUsers.length);
+      span.addEvent('Top users by form type fetched successfully');
+
+      span.end();
+      return topUsers;
+    } catch (err: any) {
+      span.recordException(err);
+      span.end();
+      throw err;
+    }
+  }
 }

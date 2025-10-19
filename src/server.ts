@@ -3,6 +3,7 @@ import path from 'path';
 dotenv.config({ path: path.resolve('.env') });
 
 import './telemetry/tracing';
+import { httpRequestDuration, formSubmissions, userRegistrations, loginAttempts, onlineUsers, userSessions, initializeMetrics, register } from './telemetry/metrics';
 
 import express, { Request, Response, NextFunction } from 'express';
 import cors from 'cors';
@@ -16,52 +17,10 @@ import adminActivityRoutes from './api/routes/admin.activity.routes';
 import metricsRoutes from './api/routes/metrics.routes';
 import { connectDB } from './db/index';
 import { attachTraceIds, deprecatedRoute } from './api/middlewares/otelContext';
-import { register, collectDefaultMetrics, Counter, Histogram, Gauge } from 'prom-client';
+import { MetricsUpdaterService } from './services/metrics.service';
 
 const app = express();
 const PORT = Number(process.env.PORT || 3000);
-
-/* -------------------------------------------------------------------------- */
-/*                              PROMETHEUS METRICS                           */
-/* -------------------------------------------------------------------------- */
-
-// Custom metrics
-const httpRequestDuration = new Histogram({
-  name: 'http_request_duration_seconds',
-  help: 'Duration of HTTP requests in seconds',
-  labelNames: ['method', 'route', 'status_code'],
-});
-
-const formSubmissions = new Counter({
-  name: 'form_submissions_total',
-  help: 'Total number of form submissions',
-  labelNames: ['form_type', 'tenant'],
-});
-
-const userRegistrations = new Counter({
-  name: 'user_registrations_total',
-  help: 'Total number of user registrations',
-});
-
-const loginAttempts = new Counter({
-  name: 'login_attempts_total',
-  help: 'Total number of login attempts',
-  labelNames: ['success'],
-});
-
-const onlineUsers = new Gauge({
-  name: 'online_users',
-  help: 'Number of currently authenticated/online users per tenant',
-  labelNames: ['tenant'],
-});
-const userSessions = new Counter({
-  name: 'user_sessions_total',
-  help: 'Total number of user sessions',
-  labelNames: ['action', 'tenant'], // Added tenant label
-});
-
-// Export metrics for use in other modules
-export { formSubmissions, userRegistrations, loginAttempts, onlineUsers, userSessions };
 
 /* -------------------------------------------------------------------------- */
 /*                              TRUST REVERSE PROXY                           */
@@ -74,6 +33,9 @@ app.set('trust proxy', 1);
 async function startServer() {
   try {
     await connectDB();
+
+    // Start periodic metrics updates for gauge metrics
+    MetricsUpdaterService.startPeriodicUpdates();
 
     /* ----------------------------- MIDDLEWARES ---------------------------- */
     app.use(cors());
@@ -98,8 +60,11 @@ async function startServer() {
     });
 
     /* ----------------------------- PROMETHEUS METRICS ----------------------------- */
-    // Collect default metrics (CPU, memory, etc.)
-    collectDefaultMetrics();
+    // Initialize metrics collection (CPU, memory, etc.)
+    initializeMetrics();
+
+    // Start periodic updates for gauge metrics (forms per tenant)
+    // Note: This will be initialized after DB connection below
 
     // Expose metrics endpoint
     app.get('/metrics', async (_req: Request, res: Response) => {

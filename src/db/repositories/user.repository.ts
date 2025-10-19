@@ -108,4 +108,88 @@ export default class UserRepository {
     const user = await User.findOne({ where: { user_email: email.toLowerCase() } });
     return user ? { id: user.id, username: user.username, user_email: user.user_email } : null;
   }
+
+  // Método para obtener el usuario con más formularios de cada tipo
+  static async getTopUsersByFormType(sequelize: any, tenant: string) {
+    const results: any[] = [];
+
+    if (tenant === 'agromo') {
+      // Para agromo, contar los formularios relacionados (excluyendo el formulario principal)
+      const relatedForms = [
+        { table: 'condiciones_climaticas', name: 'agromo_condiciones_climaticas', joinField: 'id_formulario', userJoin: 'f.id_usuario' },
+        { table: 'detalles_quimicos', name: 'agromo_detalles_quimicos', joinField: 'id_formulario', userJoin: 'f.id_usuario' },
+        { table: 'fotografia', name: 'agromo_fotografia', joinField: 'id_formulario', userJoin: 'f.id_usuario' },
+        { table: 'chat_ia', name: 'agromo_chat_ia', joinField: 'id_usuario', userJoin: 'c.id_usuario' }
+      ];
+
+      for (const form of relatedForms) {
+        let query: string;
+        let params: any[] = [];
+
+        if (form.table === 'chat_ia') {
+          // Chat IA tiene id_usuario directamente
+          query = `
+            SELECT u.id, u.username, u.user_email, COUNT(c.id_chat) as count
+            FROM users u
+            INNER JOIN chat_ia c ON u.id = c.id_usuario
+            GROUP BY u.id, u.username, u.user_email
+            ORDER BY count DESC
+            LIMIT 1
+          `;
+        } else {
+          // Otros formularios se unen a través del formulario principal
+          query = `
+            SELECT u.id, u.username, u.user_email, COUNT(f2.${form.joinField.replace('id_', 'id_')}) as count
+            FROM users u
+            INNER JOIN formulario f ON u.id = f.id_usuario
+            INNER JOIN ${form.table} f2 ON f.id_formulario = f2.${form.joinField}
+            GROUP BY u.id, u.username, u.user_email
+            ORDER BY count DESC
+            LIMIT 1
+          `;
+        }
+
+        const result = await sequelize.query(query, { type: sequelize.QueryTypes.SELECT });
+
+        if (result.length > 0) {
+          results.push({
+            form_type: form.name,
+            user_id: result[0].id,
+            username: result[0].username,
+            user_email: result[0].user_email,
+            count: parseInt(result[0].count)
+          });
+        }
+      }
+    } else if (tenant === 'biomo' || tenant === 'robo') {
+      // Para biomo/robo, hay 7 tipos de formularios (1-7)
+      for (let i = 1; i <= 7; i++) {
+        const tableName = `formulario${i}`;
+        const FormModel = sequelize.models[`${tenant.toUpperCase()}_FORM_${i}`];
+
+        if (FormModel) {
+          const result = await sequelize.query(`
+            SELECT u.id, u.username, u.user_email, COUNT(f.id) as count
+            FROM users u
+            INNER JOIN ${tableName} f ON u.id = f.id_usuario
+            GROUP BY u.id, u.username, u.user_email
+            ORDER BY count DESC
+            LIMIT 1
+          `, { type: sequelize.QueryTypes.SELECT });
+
+          if (result.length > 0) {
+            results.push({
+              form_type: `${tenant}_form_${i}`,
+              user_id: result[0].id,
+              username: result[0].username,
+              user_email: result[0].user_email,
+              count: parseInt(result[0].count)
+            });
+          }
+        }
+      }
+    }
+
+    return results;
+  }
 }

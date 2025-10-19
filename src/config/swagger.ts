@@ -657,11 +657,11 @@ const extraPaths = {
       }
     }
   },
-  "/api/{tenant}/admin/users/{userId}/forms": {
+  "/api/{tenant}/admin/users/top-by-form-type": {
     get: {
-      summary: "Obtener todos los formularios de un usuario específico (solo para usuarios backend)",
+      summary: "Obtener el usuario con más formularios de cada tipo (solo para usuarios backend)",
       tags: ["Administración"],
-      description: "Endpoint administrativo que permite a usuarios del tenant 'back' ver todos los formularios creados por un usuario específico de cualquier tenant.",
+      description: "Endpoint administrativo que permite a usuarios del tenant 'back' obtener el usuario con el mayor número de formularios enviados para cada tipo de formulario disponible en el tenant. Para agromo cuenta condiciones_climaticas, detalles_quimicos, fotografias y chat_ia. Para biomo/robo cuenta los formularios 1-7.",
       parameters: [
         {
           in: "path",
@@ -672,13 +672,6 @@ const extraPaths = {
             enum: ["agromo", "biomo", "robo", "back"]
           },
           description: "Identificador del tenant a consultar"
-        },
-        {
-          in: "path",
-          name: "userId",
-          required: true,
-          schema: { type: "integer" },
-          description: "ID del usuario cuyos formularios se quieren consultar"
         }
       ],
       security: [
@@ -689,83 +682,27 @@ const extraPaths = {
       ],
       responses: {
         200: {
-          description: "Formularios del usuario obtenidos exitosamente",
+          description: "Usuarios top por tipo de formulario obtenidos exitosamente",
           content: {
             "application/json": {
               schema: {
                 type: "object",
                 properties: {
-                  message: {
-                    type: "string",
-                    example: "Formularios del usuario obtenidos exitosamente"
-                  },
+                  message: { type: "string", example: "Usuarios top por tipo de formulario obtenidos exitosamente" },
                   tenant: { type: "string", example: "biomo" },
-                  userId: { type: "integer", example: 123 },
                   data: {
                     type: "array",
+                    description: "Lista de usuarios con más formularios por tipo",
                     items: {
                       type: "object",
-                      description: "Datos del formulario (estructura dinámica según tenant y tipo)",
-                      additionalProperties: true
+                      properties: {
+                        form_type: { type: "string", example: "agromo_condiciones_climaticas" },
+                        user_id: { type: "integer", example: 123 },
+                        username: { type: "string", example: "enrique" },
+                        user_email: { type: "string", example: "enrique@example.com" },
+                        count: { type: "integer", example: 15 }
+                      }
                     }
-                  },
-                  count: { type: "integer", example: 2 }
-                }
-              }
-            }
-          }
-        },
-        401: { description: "Token inválido o ausente" },
-        403: { description: "Acceso denegado - solo usuarios del tenant backend" },
-        500: { description: "Error del servidor" }
-      }
-    }
-  },
-  "/api/{tenant}/admin/users/email/{email}": {
-    get: {
-      summary: "Obtener actividad y formularios de un usuario por email (solo para usuarios backend)",
-      tags: ["Administración"],
-      description: "Endpoint administrativo que permite a usuarios del tenant 'back' buscar un usuario por su email (o identificador) en cualquier tenant y obtener todos sus formularios.",
-      parameters: [
-        {
-          in: "path",
-          name: "tenant",
-          required: true,
-          schema: {
-            type: "string",
-            enum: ["agromo", "biomo", "robo", "back"]
-          },
-          description: "Identificador del tenant a consultar"
-        },
-        {
-          in: "path",
-          name: "email",
-          required: true,
-          schema: { type: "string", format: "email" },
-          description: "Email o identificador del usuario a buscar"
-        }
-      ],
-      security: [
-        {
-          bearerAuth: [],
-          "Tenant API Key": []
-        }
-      ],
-      responses: {
-        200: {
-          description: "Actividad del usuario obtenida exitosamente",
-          content: {
-            "application/json": {
-              schema: {
-                type: "object",
-                properties: {
-                  message: { type: "string", example: "Usuario y formularios obtenidos" },
-                  tenant: { type: "string", example: "biomo" },
-                  user: { $ref: "#/components/schemas/User" },
-                  data: {
-                    type: "array",
-                    description: "Lista de formularios agrupados por tipo/tabla",
-                    items: { type: "object", additionalProperties: true }
                   },
                   count: { type: "integer", example: 7 }
                 }
@@ -773,18 +710,29 @@ const extraPaths = {
             }
           }
         },
-        404: { description: "Usuario no encontrado" },
         401: { description: "Token inválido o ausente" },
         403: { description: "Acceso denegado - solo usuarios del tenant backend" },
         500: { description: "Error del servidor" }
       }
     }
   },
-  "/api/metrics/online-users": {
+  "/api/{tenant}/admin/metrics/online-users": {
     get: {
       summary: "Obtener usuarios online por tenant",
       tags: ["Métricas"],
       description: "Endpoint administrativo que permite a usuarios del tenant 'back' consultar el número de usuarios online agrupados por tenant desde Prometheus.",
+      parameters: [
+        {
+          in: "path",
+          name: "tenant",
+          required: true,
+          schema: {
+            type: "string",
+            enum: ["agromo", "biomo", "robo", "back"]
+          },
+          description: "Tenant del usuario (debe ser 'back' para acceso administrativo)"
+        }
+      ],
       security: [
         {
           bearerAuth: [],
@@ -822,11 +770,23 @@ const extraPaths = {
       }
     }
   },
-  "/api/metrics/online-users/total": {
+  "/api/{tenant}/admin/metrics/online-users/total": {
     get: {
       summary: "Obtener total de usuarios online",
       tags: ["Métricas"],
       description: "Endpoint administrativo que permite a usuarios del tenant 'back' consultar el número total de usuarios online en todos los tenants desde Prometheus.",
+      parameters: [
+        {
+          in: "path",
+          name: "tenant",
+          required: true,
+          schema: {
+            type: "string",
+            enum: ["agromo", "biomo", "robo", "back"]
+          },
+          description: "Tenant del usuario (debe ser 'back' para acceso administrativo)"
+        }
+      ],
       security: [
         {
           bearerAuth: [],
@@ -860,6 +820,61 @@ const extraPaths = {
       }
     }
   },
+  "/api/{tenant}/admin/metrics/forms": {
+    get: {
+      summary: "Obtener conteo de formularios por tenant",
+      tags: ["Métricas"],
+      description: "Endpoint administrativo que permite consultar el número de formularios almacenados por tenant y tipo de formulario desde Prometheus.",
+      parameters: [
+        {
+          in: "path",
+          name: "tenant",
+          required: true,
+          schema: {
+            type: "string",
+            enum: ["agromo", "biomo", "robo", "back"]
+          },
+          description: "Tenant del usuario (debe ser 'back' para acceso administrativo)"
+        }
+      ],
+      security: [
+        {
+          bearerAuth: [],
+          "Tenant API Key": []
+        }
+      ],
+      responses: {
+        200: {
+          description: "Datos de formularios obtenidos exitosamente",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  success: { type: "boolean", example: true },
+                  data: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        tenant: { type: "string", example: "agromo" },
+                        form_type: { type: "string", example: "form_1" },
+                        count: { type: "number", example: 42 }
+                      }
+                    }
+                  },
+                  timestamp: { type: "string", format: "date-time" }
+                }
+              }
+            }
+          }
+        },
+        401: { description: "No autorizado - token JWT requerido" },
+        403: { description: "Acceso denegado - solo usuarios del tenant backend" },
+        500: { description: "Error del servidor" }
+      }
+    }
+  }
 };
 
 /* ---------------------- Normalización de URL del servidor ------------------------ */
