@@ -22,6 +22,7 @@ services:
       - SWAGGER_SERVER_URL=${SWAGGER_SERVER_URL}
       - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://otel-collector:4318/v1/traces
       - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://otel-collector:4318/v1/metrics
+      - PROMETHEUS_URL=http://prometheus:9090
     ports:
       - "3000:3000"
     volumes:
@@ -47,6 +48,7 @@ services:
       - "3200:3200"  # Tempo API
     volumes:
       - ./observability/tempo-config.yaml:/etc/tempo.yaml
+      - tempo_data:/var/tempo
     command: ["-config.file=/etc/tempo.yaml"]
     restart: unless-stopped
   prometheus:
@@ -55,7 +57,8 @@ services:
       - "9090:9090"
     volumes:
       - ./observability/prometheus.yml:/etc/prom.yml
-    command: ["--config.file=/etc/prom.yml", "--web.enable-remote-write-receiver"]
+      - prometheus_data:/prometheus
+    command: ["--config.file=/etc/prom.yml", "--web.enable-remote-write-receiver", "--storage.tsdb.retention.time=30d"]
     restart: unless-stopped
   grafana:
     image: grafana/grafana:latest
@@ -63,7 +66,12 @@ services:
       - "3001:3000"  # Avoid conflict with API on 3000
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_PATHS_CONFIG=/etc/grafana/custom.ini
+      - GF_LOG_LEVEL=debug
+      - GF_FEATURE_TOGGLES_PROVISIONING=true
+      - GF_FEATURE_TOGGLES_KUBERNETESDASHBOARDS=true
     volumes:
+      - ./grafana/custom.ini:/etc/grafana/custom.ini:ro
       - grafana_data:/var/lib/grafana
     restart: unless-stopped
   otel-collector:
@@ -82,3 +90,5 @@ volumes:
   caddy_data:
   caddy_config:
   grafana_data:
+  prometheus_data:
+  tempo_data:

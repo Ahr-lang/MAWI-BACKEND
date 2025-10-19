@@ -13,6 +13,7 @@ import userRoutes from './api/routes/user.routes';
 import formRoutes from './api/routes/form.routes';
 import adminRoutes from './api/routes/admin.routes';
 import adminActivityRoutes from './api/routes/admin.activity.routes';
+import metricsRoutes from './api/routes/metrics.routes';
 import { connectDB } from './db/index';
 import { attachTraceIds, deprecatedRoute } from './api/middlewares/otelContext';
 import { register, collectDefaultMetrics, Counter, Histogram, Gauge } from 'prom-client';
@@ -49,14 +50,14 @@ const loginAttempts = new Counter({
 });
 
 const onlineUsers = new Gauge({
-  name: 'online_users_current',
-  help: 'Current number of online users',
+  name: 'online_users',
+  help: 'Number of currently authenticated/online users per tenant',
+  labelNames: ['tenant'],
 });
-
 const userSessions = new Counter({
   name: 'user_sessions_total',
   help: 'Total number of user sessions',
-  labelNames: ['action'], // 'login', 'logout'
+  labelNames: ['action', 'tenant'], // Added tenant label
 });
 
 // Export metrics for use in other modules
@@ -116,6 +117,7 @@ async function startServer() {
     app.use('/api', formRoutes);
     app.use('/api', adminRoutes);
   app.use('/api', adminActivityRoutes);
+  app.use('/api', metricsRoutes);
 
     // 🟣 Ejemplo de endpoint obsoleto (CA4)
     app.all('/api/v1/old-auth', deprecatedRoute('Use /api/v2/auth instead'));

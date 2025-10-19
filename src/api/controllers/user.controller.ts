@@ -95,9 +95,8 @@ function login(req: any, res: any, next: any) {
     loginAttempts.labels('true').inc();
 
     // Track user session and online status
-    userSessions.labels('login').inc();
-    onlineUsers.inc();
-
+userSessions.labels('login', req.tenant).inc();   // ✅ dos labels: action, tenant
+onlineUsers.labels(req.tenant).inc();             // ✅ incrementa el gauge
     // Generamos el token JWT
     const token = signToken({ id: user.id, username: user.username, tenant: user.tenant });
     return res.json({
@@ -132,8 +131,9 @@ function logout(_req: any, res: any) {
   span?.setAttribute('user.id', _req.user?.id);
 
   // Track user session logout and online status
-  userSessions.labels('logout').inc();
-  onlineUsers.dec();
+// Logout:
+userSessions.labels('logout', _req.tenant).inc(); // ✅ dos labels
+onlineUsers.labels(_req.tenant).dec();            // ✅ decrementa el gauge
   
   return res.json({ message: "Logged out" });
 }

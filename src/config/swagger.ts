@@ -94,12 +94,60 @@ const extraPaths = {
           "application/json": {
             schema: {
               type: "object",
-              description: "Datos del formulario",
+              description: "Datos del formulario - campos varían según tenant y formKey",
               additionalProperties: true,
-              example: {
-                nombre: "Juan Pérez",
-                fecha: "2025-10-14",
-                observaciones: "Formulario de ejemplo"
+              oneOf: [
+                {
+                  title: "Agromo Formulario Principal (formKey: '1')",
+                  properties: {
+                    nombre_formulario: { type: "string", description: "Nombre/título del formulario" },
+                    fecha: { type: "string", format: "date", description: "Fecha de la actividad" },
+                    hora: { type: "string", format: "time", description: "Hora de la actividad" },
+                    nombre_operador: { type: "string", description: "Nombre del operador/técnico" },
+                    medidas_plantio: { type: "string", description: "Medidas de plantío" },
+                    datos_clima: { type: "string", description: "Condiciones climáticas" },
+                    observaciones: { type: "string", description: "Observaciones adicionales" },
+                    id_agricultor: { type: "integer", description: "ID del agricultor (opcional)" },
+                    id_cultivo: { type: "integer", description: "ID del cultivo (opcional)" }
+                  },
+                  required: ["nombre_formulario", "fecha"]
+                },
+                {
+                  title: "Biomo/Robo Formularios",
+                  additionalProperties: true,
+                  description: "Campos específicos según el formulario numérico (1-7)"
+                }
+              ]
+            },
+            examples: {
+              "agromo-main-form": {
+                summary: "Ejemplo: Formulario Principal Agromo",
+                value: {
+                  nombre_formulario: "Inspección de Cultivo Maíz",
+                  fecha: "2025-10-19",
+                  hora: "14:30:00",
+                  nombre_operador: "Juan Pérez García",
+                  medidas_plantio: "Surcos de 80cm, profundidad 5cm",
+                  datos_clima: "Soleado, temperatura 28°C, humedad 65%",
+                  observaciones: "Cultivo en buen estado, riego adecuado, no se observan plagas"
+                }
+              },
+              "biomo-form": {
+                summary: "Ejemplo: Formulario Biomo",
+                value: {
+                  transecto: "Transecto A1",
+                  clima: "Templado",
+                  temporada: "Seca",
+                  tipoanimal: "Mamífero",
+                  nombrecomun: "Venado cola blanca",
+                  nombrecientifico: "Odocoileus virginianus",
+                  numeroindividuos: "3",
+                  tipoobservacion: "Visual",
+                  observaciones: "Observados pastando",
+                  latitude: 19.4326,
+                  longitude: -99.1332,
+                  fecha: "2025-10-19"
+                }
               }
             }
           }
@@ -732,6 +780,86 @@ const extraPaths = {
       }
     }
   },
+  "/api/metrics/online-users": {
+    get: {
+      summary: "Obtener usuarios online por tenant",
+      tags: ["Métricas"],
+      description: "Endpoint administrativo que permite a usuarios del tenant 'back' consultar el número de usuarios online agrupados por tenant desde Prometheus.",
+      security: [
+        {
+          bearerAuth: [],
+          "Tenant API Key": []
+        }
+      ],
+      responses: {
+        200: {
+          description: "Datos de usuarios online obtenidos exitosamente",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  success: { type: "boolean", example: true },
+                  data: {
+                    type: "array",
+                    items: {
+                      type: "object",
+                      properties: {
+                        tenant: { type: "string", example: "agromo" },
+                        onlineUsers: { type: "number", example: 5 }
+                      }
+                    }
+                  },
+                  timestamp: { type: "string", format: "date-time" }
+                }
+              }
+            }
+          }
+        },
+        401: { description: "No autorizado - token JWT requerido" },
+        403: { description: "Acceso denegado - solo usuarios del tenant backend" },
+        500: { description: "Error del servidor" }
+      }
+    }
+  },
+  "/api/metrics/online-users/total": {
+    get: {
+      summary: "Obtener total de usuarios online",
+      tags: ["Métricas"],
+      description: "Endpoint administrativo que permite a usuarios del tenant 'back' consultar el número total de usuarios online en todos los tenants desde Prometheus.",
+      security: [
+        {
+          bearerAuth: [],
+          "Tenant API Key": []
+        }
+      ],
+      responses: {
+        200: {
+          description: "Total de usuarios online obtenido exitosamente",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  success: { type: "boolean", example: true },
+                  data: {
+                    type: "object",
+                    properties: {
+                      totalOnlineUsers: { type: "number", example: 15 }
+                    }
+                  },
+                  timestamp: { type: "string", format: "date-time" }
+                }
+              }
+            }
+          }
+        },
+        401: { description: "No autorizado - token JWT requerido" },
+        403: { description: "Acceso denegado - solo usuarios del tenant backend" },
+        500: { description: "Error del servidor" }
+      }
+    }
+  },
 };
 
 /* ---------------------- Normalización de URL del servidor ------------------------ */
@@ -769,6 +897,10 @@ const options: any = {
       {
         name: "Administración",
         description: "Endpoints administrativos para gestión de usuarios y formularios (solo para usuarios backend)",
+      },
+      {
+        name: "Métricas",
+        description: "Endpoints para consultar métricas del sistema desde Prometheus (solo para usuarios backend)",
       },
     ],
     // Keep servers list minimal & de-duped to avoid UI confusion.
@@ -823,16 +955,6 @@ const options: any = {
             lastAccess: { type: "string", format: "date-time", example: "2025-10-07T12:34:56Z" },
             lastLogin: { type: "string", format: "date-time", example: "2025-10-07T12:00:00Z" },
             tenant: { type: "string", example: "agromo" },
-          },
-        },
-        FormSubmission: {
-          type: "object",
-          description: "Dynamic form submission payload",
-          additionalProperties: true,
-          example: {
-            field1: "value1",
-            field2: 123,
-            field3: true
           },
         },
       },

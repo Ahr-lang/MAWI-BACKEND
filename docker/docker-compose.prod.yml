@@ -34,6 +34,7 @@ services:
       - "3200:3200"  # Tempo API
     volumes:
       - ./observability/tempo-config.yaml:/etc/tempo.yaml
+      - tempo_data:/var/tempo
     command: ["-config.file=/etc/tempo.yaml"]
     restart: unless-stopped
   prometheus:
@@ -42,7 +43,10 @@ services:
       - "9090:9090"
     volumes:
       - ./observability/prometheus.yml:/etc/prom.yml
-    command: ["--config.file=/etc/prom.yml"]
+      - prometheus_data:/prometheus
+    command: 
+      - --config.file=/etc/prom.yml
+      - --storage.tsdb.retention.time=30d
     restart: unless-stopped
   grafana:
     image: grafana/grafana:latest
@@ -50,6 +54,12 @@ services:
       - "3001:3000"  # Avoid conflict with API on 3000
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
+      - GF_PATHS_CONFIG=/etc/grafana/custom.ini
+      - ./grafana/custom.ini:/etc/grafana/custom.ini:ro
+
+      - GF_LOG_LEVEL=debug
+      - GF_FEATURE_TOGGLES_PROVISIONING=true
+      - GF_FEATURE_TOGGLES_KUBERNETESDASHBOARDS=true
     volumes:
       - grafana_data:/var/lib/grafana
     restart: unless-stopped
@@ -67,3 +77,5 @@ services:
 
 volumes:
   grafana_data:
+  prometheus_data:
+  tempo_data:
