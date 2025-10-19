@@ -113,9 +113,6 @@ async function getUserForms(req: any, res: Response) {
   }
 }
 
-// Exportamos las funciones
-export { getAllUsers, getUsersWithForms, getUserForms, createUserAdmin };
-
 // Obtener usuario por email/identifier y sus formularios (admin)
 export async function getUserByEmail(req: any, res: Response) {
   const span = trace.getActiveSpan();
@@ -190,3 +187,40 @@ async function createUserAdmin(req: any, res: Response) {
     return res.status(500).json({ error: 'Server error creating user' });
   }
 }
+
+// Eliminar usuario (solo backend)
+async function deleteUserAdmin(req: any, res: Response) {
+  const span = trace.getActiveSpan();
+  span?.setAttribute('operation', 'admin.deleteUser');
+  span?.setAttribute('tenant', req.tenant);
+  span?.setAttribute('admin.user', req.user?.username);
+  span?.setAttribute('target.user.id', req.params.userId);
+
+  const sequelize = req.sequelize;
+  const tenant = req.tenant as string;
+  const userId = parseInt(req.params.userId);
+
+  try {
+    span?.addEvent('Intentando eliminar usuario');
+
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: 'ID de usuario inválido' });
+    }
+
+    const deleted = await UserService.deleteUserById(sequelize, userId);
+
+    if (!deleted) {
+      return res.status(404).json({ error: 'Usuario no encontrado o no eliminado' });
+    }
+
+    span?.addEvent('Usuario eliminado exitosamente');
+    return res.status(200).json({ message: 'Usuario eliminado correctamente', tenant, userId });
+  } catch (err: any) {
+    span?.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
+    span?.recordException(err);
+    console.error('[AdminDeleteUser] Error:', err);
+    return res.status(500).json({ error: 'Error al eliminar usuario' });
+  }
+}
+
+export { getAllUsers, getUsersWithForms, getUserForms, createUserAdmin, deleteUserAdmin };

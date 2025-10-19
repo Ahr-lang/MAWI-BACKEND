@@ -153,4 +153,10 @@ export default class UserService {
       throw err;
     }
   }
+
+  static async deleteUserById(sequelize: any, userId: number) {
+    const User = sequelize.models.User;
+    const deletedCount = await User.destroy({ where: { id: userId } });
+    return deletedCount > 0;
+  }
 }
