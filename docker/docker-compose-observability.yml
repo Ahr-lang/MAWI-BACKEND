@@ -40,7 +40,7 @@ services:
   grafana:
     image: grafana/grafana:latest
     ports:
-      - "3001:3000"  # Avoid conflict with API on 3000
+      - "3002:3000"  # Changed from 3001 to avoid port conflict
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     restart: unless-stopped
