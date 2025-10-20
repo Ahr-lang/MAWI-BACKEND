@@ -12,31 +12,21 @@ export async function createSubmission(req: any, res: Response) {
   const sequelize = req.sequelize;
   const tenant = req.tenant as string;
   const { formKey } = req.params;
-  const payload = req.body || {};
   const userId = req.user?.id;
 
-  // Add image URL if uploaded
-  if ((req as any).imageUrl) {
-    payload.imageUrl = (req as any).imageUrl;
-    console.log("[FormController] Image URL added to payload:", payload.imageUrl);
-    
-    // Process image metadata if available
-    if (req.file) {
-      payload.imageMetadata = {
-        originalName: req.file.originalname,
-        mimeType: req.file.mimetype,
-        size: req.file.size,
-        uploadedAt: new Date().toISOString()
-      };
-      console.log("[FormController] Image metadata added:", payload.imageMetadata);
-    }
-  } else {
-    console.log("[FormController] No image URL found in request");
+  let meta: any = req.body?.metadata ?? {};
+  if (typeof meta === "string") {
+    try { meta = JSON.parse(meta); } catch { meta = {}; }
   }
+
+  const payload = {
+    ...meta,
+    id_usuario: userId ?? null,
+    image_url: req.imageUrl ?? null,
+  };
 
   try {
     console.log("[FormController] Creating submission with payload:", JSON.stringify(payload, null, 2));
-    span?.addEvent('Creating form submission');
 
     const created = await FormService.createSubmission(sequelize, tenant, formKey, payload, userId);
 
