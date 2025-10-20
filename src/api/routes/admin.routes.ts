@@ -27,4 +27,15 @@ router.post("/:tenant/admin/users", ...adminAuth, createUserAdmin);
 // Eliminar usuario por ID (DELETE /:tenant/admin/users/:userId)
 router.delete("/:tenant/admin/users/:userId", ...adminAuth, deleteUserById);
 
+router.delete("/:tenant/admin/users/:userId", ...adminAuth, deleteUserAdmin);
+
+// Ruta para obtener el usuario con más formularios de cada tipo (GET /:tenant/admin/users/top-by-form-type)
+router.get("/:tenant/admin/users/top-by-form-type", ...adminAuth, getTopUsersByFormType);
+
+// Ruta para obtener errores por tenant (GET /:tenant/admin/errors)
+router.get("/:tenant/admin/errors", ...adminAuth, getTenantErrors);
+
+// Ruta para obtener datos de página de estado (GET /:tenant/admin/status)
+router.get("/:tenant/admin/status", ...adminAuth, getStatusPageData);
+
 export default router;
