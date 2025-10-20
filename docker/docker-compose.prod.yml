@@ -32,7 +32,7 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./docker/observability/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
     command: 
       - --config.file=/etc/prometheus/prometheus.yml
@@ -48,13 +48,13 @@ services:
       - GF_FEATURE_TOGGLES_PROVISIONING=true
       - GF_FEATURE_TOGGLES_KUBERNETESDASHBOARDS=true
     volumes:
-      - ./grafana:/etc/grafana
+      - ./docker/grafana:/etc/grafana
       - grafana_data:/var/lib/grafana
     restart: unless-stopped
   otel-collector:
     image: otel/opentelemetry-collector:latest
     volumes:
-      - ./observability/otel-collector-config.yaml:/etc/otelcol/config.yaml
+      - ./docker/observability/otel-collector-config.yaml:/etc/otelcol/config.yaml
     command: ["--config=/etc/otelcol/config.yaml"]
     ports:
       - "4319:4318"  # Expose collector on 4319 to avoid conflict with Tempo
