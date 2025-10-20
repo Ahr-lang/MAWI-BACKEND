@@ -18,9 +18,13 @@ export async function createSubmission(req: any, res: Response) {
   // Add image URL if uploaded
   if ((req as any).imageUrl) {
     payload.imageUrl = (req as any).imageUrl;
+    console.log("[FormController] Image URL added to payload:", payload.imageUrl);
+  } else {
+    console.log("[FormController] No image URL found in request");
   }
 
   try {
+    console.log("[FormController] Creating submission with payload:", JSON.stringify(payload, null, 2));
     span?.addEvent('Creating form submission');
 
     const created = await FormService.createSubmission(sequelize, tenant, formKey, payload, userId);
