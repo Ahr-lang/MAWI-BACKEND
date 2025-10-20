@@ -1,4 +1,4 @@
-version: "3.9"
+\version: "3.9"
 
 services:
   api:
@@ -8,29 +8,28 @@ services:
       target: production
     image: mawi-backend:prod
     environment:
-      - PORT=3000
-      - JWT_SECRET=${JWT_SECRET}
-      - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
-      - DB_HOST=${DB_HOST}
-      - DB_PORT=${DB_PORT}
-      - DB_USER=${DB_USER}
-      - DB_PASS=${DB_PASS}
-      - DB_AGROMO=${DB_AGROMO}
-      - DB_BIOMO=${DB_BIOMO}
-      - DB_ROBO=${DB_ROBO}
-      - DB_BACK=${DB_BACK}
-      - DB_SSL=${DB_SSL}
-      - MINIO_ENDPOINT=${MINIO_ENDPOINT}
-      - MINIO_ACCESS_KEY=${MINIO_ACCESS_KEY}
-      - MINIO_SECRET_KEY=${MINIO_SECRET_KEY}
-      - MINIO_BUCKET_NAME=${MINIO_BUCKET_NAME}
-      - SWAGGER_SERVER_URL=${SWAGGER_SERVER_URL}
-      # OpenTelemetry configuration
-      - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://otel-collector:4318/v1/traces
-      - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://otel-collector:4318/v1/metrics
-      - OTEL_SERVICE_NAME=${OTEL_SERVICE_NAME:-mawi-backend}
-    ports:
-      - "3000:3000"  # Expose for Coolify's reverse proxy
+      PORT: "3000"
+      JWT_SECRET: "${JWT_SECRET}"
+      JWT_EXPIRES_IN: "${JWT_EXPIRES_IN}"
+      DB_HOST: "${DB_HOST}"
+      DB_PORT: "${DB_PORT}"
+      DB_USER: "${DB_USER}"
+      DB_PASS: "${DB_PASS}"
+      DB_AGROMO: "${DB_AGROMO}"
+      DB_BIOMO: "${DB_BIOMO}"
+      DB_ROBO: "${DB_ROBO}"
+      DB_BACK: "${DB_BACK}"
+      DB_SSL: "${DB_SSL}"
+      MINIO_ENDPOINT: "${MINIO_ENDPOINT}"
+      MINIO_ACCESS_KEY: "${MINIO_ACCESS_KEY}"
+      MINIO_SECRET_KEY: "${MINIO_SECRET_KEY}"
+      MINIO_BUCKET_NAME: "${MINIO_BUCKET_NAME}"
+      SWAGGER_SERVER_URL: "${SWAGGER_SERVER_URL}"
+      OTEL_EXPORTER_OTLP_TRACES_ENDPOINT: "http://otel-collector:4318/v1/traces"
+      OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: "http://otel-collector:4318/v1/metrics"
+      OTEL_SERVICE_NAME: "${OTEL_SERVICE_NAME:-mawi-backend}"
+    expose:
+      - "3000"   # internal only; reverse proxy will hit api:3000
     depends_on:
       - otel-collector
     restart: unless-stopped
@@ -40,6 +39,13 @@ services:
       timeout: 10s
       retries: 3
       start_period: 40s
+    labels:
+      - traefik.enable=true
+      # Tell the proxy which port to use inside the container
+      - traefik.http.services.api.loadbalancer.server.port=3000
+      # Optional: have the proxy check your real health endpoint
+      - traefik.http.services.api.loadbalancer.healthcheck.path=/healthz
+      - traefik.http.services.api.loadbalancer.healthcheck.interval=10s
 
   prometheus:
     build:
@@ -49,23 +55,21 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      # Only persist data, NOT config (config is embedded in image)
-      - prometheus_data:/prometheus
+      - p8s8ccog848c004g8c440kko_prometheus-data:/prometheus
     restart: unless-stopped
 
   grafana:
     build:
       context: .
-      dockerfile: Dockerfile.grafana
+    dockerfile: Dockerfile.grafana
     image: mawi-grafana:prod
     ports:
       - "3002:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_ADMIN_PASSWORD:-admin}
-      - GF_LOG_LEVEL=info
+      GF_SECURITY_ADMIN_PASSWORD: "${GRAFANA_ADMIN_PASSWORD:-admin}"
+      GF_LOG_LEVEL: info
     volumes:
-      # Only persist data, NOT config (config is embedded in image)
-      - grafana_data:/var/lib/grafana
+      - p8s8ccog848c004g8c440kko_grafana-data:/var/lib/grafana
     depends_on:
       - prometheus
     restart: unless-stopped
@@ -82,5 +86,11 @@ services:
     restart: unless-stopped
 
 volumes:
-  grafana_data:
-  prometheus_data:
+  p8s8ccog848c004g8c440kko_prometheus-data:
+    name: p8s8ccog848c004g8c440kko_prometheus-data
+  p8s8ccog848c004g8c440kko_grafana-data:
+    name: p8s8ccog848c004g8c440kko_grafana-data
+
+networks:
+  p8s8ccog848c004g8c440kko:
+    external: true
