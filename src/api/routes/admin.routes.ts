@@ -3,7 +3,6 @@ import { Router } from "express";
 import { getAllUsers, getUsersWithForms, getUserForms, getUserByEmail, createUserAdmin, getTopUsersByFormType } from "../controllers/admin.controller";
 import { protectAuth } from "../middlewares/protect";
 import { ensureBackendUser } from "../middlewares/common/backendAuth";
-import { deleteUserAdmin } from "../controllers/admin.controller"
 
 const router = Router();
 
@@ -24,7 +23,5 @@ router.get("/:tenant/admin/users/email/:email", ...adminAuth, getUserByEmail);
 
 // Crear usuario en tenant (admin)
 router.post("/:tenant/admin/users", ...adminAuth, createUserAdmin);
-// Eliminar usuario por ID (DELETE /:tenant/admin/users/:userId)
-router.delete("/:tenant/admin/users/:userId", ...adminAuth, deleteUserAdmin);
 
 export default router;

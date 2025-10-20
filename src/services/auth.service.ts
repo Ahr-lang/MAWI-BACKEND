@@ -153,7 +153,7 @@ passport.use(
 
       // Retornamos el usuario
       span.end();
-      return done(null, { id: user.id, username: user.username, tenant: payload.tenant });
+      return done(null, { id: user.id, username: user.username, user_email: user.user_email, tenant: payload.tenant });
     } catch (err: any) {
       span.recordException(err);
       span.end();
