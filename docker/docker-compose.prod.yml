@@ -33,7 +33,7 @@ services:
       - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml
     restart: unless-stopped
   grafana:
-    image: mirror.gcr.io/library/grafana/grafana:latest
+    image: grafana/grafana:latest
     ports:
       - "3002:3000"  # Changed from 3001 to avoid port conflict
     environment:

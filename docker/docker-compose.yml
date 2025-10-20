@@ -29,7 +29,7 @@ services:
       - ../src:/usr/src/app/src
     restart: unless-stopped
   caddy:
-    image: mirror.gcr.io/library/caddy:alpine
+    image: caddy:alpine
     ports:
       - "80:80"
       - "443:443"
@@ -42,7 +42,7 @@ services:
       - api
     restart: unless-stopped
   prometheus:
-    image: mirror.gcr.io/library/prom/prometheus:latest
+    image: prom/prometheus:latest
     ports:
       - "9090:9090"
     volumes:
@@ -51,7 +51,7 @@ services:
     command: ["--config.file=/etc/prometheus/prometheus.yml", "--web.enable-remote-write-receiver", "--storage.tsdb.retention.time=30d"]
     restart: unless-stopped
   grafana:
-    image: mirror.gcr.io/library/grafana/grafana:latest
+    image: grafana/grafana:latest
     ports:
       - "3002:3000"  # Changed from 3001 to avoid port conflict
     environment:
