@@ -128,19 +128,11 @@ passport.use(
       // Si el token pertenece al tenant 'back' (usuario admin) lo validamos contra la DB de 'back'.
       // En solicitudes normales usamos el sequelize ya adjuntado al request.
       let sequelize: any = req.sequelize;
-      if (payload.tenant === 'back') {
-        try {
-          sequelize = getSequelize('back');
-        } catch (err) {
-          // si no existe la instancia de back, caemos a la instancia del req (fallback)
-          sequelize = req.sequelize;
-        }
-      }
 
       span.addEvent('Finding user by ID');
 
   // Buscamos al usuario por ID en la instancia correspondiente
-  console.debug('[JWT] using sequelize for tenant:', payload.tenant === 'back' ? 'back' : req.params?.tenant);
+  console.debug('[JWT] using sequelize for tenant:', req.params?.tenant);
   const user = await UserRepository.findById(sequelize, payload.id);
   console.debug('[JWT] found user:', user);
       if (!user) {
