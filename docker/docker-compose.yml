@@ -48,7 +48,7 @@ services:
     volumes:
       - ./observability/prometheus.yml:/etc/prometheus.yml
       - prometheus_data:/prometheus
-    command: ["--config.file=/etc/prometheus.yml", "--web.enable-remote-write-receiver", "--storage.tsdb.retention.time=30d"]
+    command: ["--config.file=/prometheus.yml", "--web.enable-remote-write-receiver", "--storage.tsdb.retention.time=30d"]
     restart: unless-stopped
   grafana:
     image: grafana/grafana:latest
@@ -56,19 +56,19 @@ services:
       - "3002:3000"  # Changed from 3001 to avoid port conflict
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_PATHS_CONFIG=/etc/grafana/custom.ini
+      - GF_PATHS_CONFIG=/grafana.ini
       - GF_LOG_LEVEL=debug
       - GF_FEATURE_TOGGLES_PROVISIONING=true
       - GF_FEATURE_TOGGLES_KUBERNETESDASHBOARDS=true
     volumes:
-      - ./grafana/custom.ini:/etc/grafana/custom.ini:ro
+      - ./grafana/custom.ini:/grafana.ini:ro
       - grafana_data:/var/lib/grafana
     restart: unless-stopped
   otel-collector:
     image: otel/opentelemetry-collector:latest
     volumes:
-      - ./observability/otel-collector-config.yaml:/etc/otel-collector/config.yaml
-    command: ["--config=/etc/otel-collector/config.yaml"]
+      - ./observability/otel-collector-config.yaml:/otel-config.yaml
+    command: ["--config=/otel-config.yaml"]
     ports:
       - "4319:4318"  # Expose collector on 4319
     depends_on:
