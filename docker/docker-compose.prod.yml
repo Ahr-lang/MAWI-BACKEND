@@ -31,10 +31,8 @@ services:
     image: prom/prometheus:latest
     ports:
       - "9090:9090"
-    configs:
-      - source: prometheus_config
-        target: /etc/prometheus/prometheus.yml
     volumes:
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
     command: 
       - --config.file=/etc/prometheus/prometheus.yml
@@ -50,17 +48,14 @@ services:
       - GF_LOG_LEVEL=debug
       - GF_FEATURE_TOGGLES_PROVISIONING=true
       - GF_FEATURE_TOGGLES_KUBERNETESDASHBOARDS=true
-    configs:
-      - source: grafana_config
-        target: /etc/grafana/grafana.ini
     volumes:
+      - ./grafana/custom.ini:/etc/grafana/grafana.ini
       - grafana_data:/var/lib/grafana
     restart: unless-stopped
   otel-collector:
     image: otel/opentelemetry-collector:latest
-    configs:
-      - source: otel_config
-        target: /etc/otelcol/config.yaml
+    volumes:
+      - ./observability/otel-collector-config.yaml:/etc/otelcol/config.yaml
     command: ["--config=/etc/otelcol/config.yaml"]
     ports:
       - "4319:4318"  # Expose collector on 4319 to avoid conflict with Tempo
@@ -71,11 +66,3 @@ services:
 volumes:
   grafana_data:
   prometheus_data:
-
-configs:
-  prometheus_config:
-    file: ./observability/prometheus.yml
-  otel_config:
-    file: ./observability/otel-collector-config.yaml
-  grafana_config:
-    file: ./grafana/custom.ini
