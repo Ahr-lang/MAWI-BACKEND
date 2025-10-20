@@ -86,6 +86,32 @@
  *     responses:
  *       200:
  *         description: Información del usuario autenticado.
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 authenticated:
+ *                   type: boolean
+ *                   example: true
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 1
+ *                     username:
+ *                       type: string
+ *                       example: "enrique"
+ *                     user_email:
+ *                       type: string
+ *                       example: "enrique@example.com"
+ *                     tenant:
+ *                       type: string
+ *                       example: "agromo"
+ *                 tenant:
+ *                   type: string
+ *                   example: "agromo"
  *       401:
  *         description: Token inválido o ausente.
  */

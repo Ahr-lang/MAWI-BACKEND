@@ -7,7 +7,7 @@ export default class UserRepository {
   static async findById(sequelize: any, id: number) {
     const User = sequelize.models.User;
     const user = await User.findByPk(id);
-    return user ? { id: user.id, username: user.username } : null;
+    return user ? { id: user.id, username: user.username, user_email: user.user_email } : null;
   }
 
   // Método para encontrar un usuario por nombre de usuario o email

@@ -114,7 +114,7 @@ async function getUserForms(req: any, res: Response) {
 }
 
 // Exportamos las funciones
-export { getAllUsers, getUsersWithForms, getUserForms, createUserAdmin, getTopUsersByFormType, getTenantErrors, deleteUserAdmin, getStatusPageData };
+export { getAllUsers, getUsersWithForms, getUserForms, createUserAdmin, getTopUsersByFormType,deleteUserById };
 
 // Obtener usuario por email/identifier y sus formularios (admin)
 export async function getUserByEmail(req: any, res: Response) {
@@ -224,6 +224,64 @@ async function getTopUsersByFormType(req: any, res: Response) {
     span?.addEvent('Error obteniendo usuarios top por tipo de formulario para admin');
     console.error("[AdminGetTopUsersByFormType] Error:", err);
     return res.status(500).json({ error: "Server error getting top users by form type" });
+  }
+}
+
+// Función para eliminar un usuario por ID (solo para usuarios backend)
+async function deleteUserById(req: any, res: Response) {
+  const span = trace.getActiveSpan();
+  span?.setAttribute('operation', 'admin.deleteUserById');
+  span?.setAttribute('tenant', req.tenant);
+  span?.setAttribute('admin.user', req.user?.username);
+  span?.setAttribute('target.userId', req.params.userId);
+
+  const sequelize = req.sequelize;
+  const userId = parseInt(req.params.userId);
+  const tenant = req.tenant as string;
+
+  try {
+    span?.addEvent('Eliminando usuario por ID');
+
+    // Validar que el userId es un número válido
+    if (isNaN(userId)) {
+      span?.addEvent('Error: ID de usuario inválido');
+      return res.status(400).json({ error: "Invalid user ID" });
+    }
+
+    // Buscar el usuario antes de eliminarlo para verificar que existe
+    const User = sequelize.models.User;
+    const existingUser = await User.findByPk(userId);
+
+    if (!existingUser) {
+      span?.addEvent('Usuario no encontrado');
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    // Eliminar el usuario
+    const deletedCount = await User.destroy({
+      where: { id: userId }
+    });
+
+    if (deletedCount === 0) {
+      span?.addEvent('No se pudo eliminar el usuario');
+      return res.status(404).json({ error: "User not found" });
+    }
+
+    span?.addEvent('Usuario eliminado exitosamente');
+
+    return res.status(200).json({
+      message: "User deleted successfully",
+      userId: userId,
+      tenant: tenant
+    });
+
+  } catch (err: any) {
+    span?.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
+    span?.recordException(err);
+
+    span?.addEvent('Error eliminando usuario por ID');
+    console.error("[AdminDeleteUserById] Error:", err);
+    return res.status(500).json({ error: "Server error deleting user" });
   }
 }
 
