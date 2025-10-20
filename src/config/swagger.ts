@@ -1032,7 +1032,7 @@ const extraPaths = {
 //   SWAGGER_SERVER_URL = "https://api.ecoranger.org"
 //   Valor por defecto local = "http://localhost:3000"
 const rawBase =
-  "https://ekgcss8ww8o4ok480g08soo4.91.98.193.75.sslip.io"; // Production URL
+  "http://ekgcss8ww8o4ok480g08soo4.91.98.193.75.sslip.io"; // Production URL (HTTP - SSL issues)
 
 // Normalizar: quitar barras finales
 const trimmed = rawBase.replace(/\/+$/, "");
