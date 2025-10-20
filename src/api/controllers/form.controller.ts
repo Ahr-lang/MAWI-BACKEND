@@ -19,6 +19,17 @@ export async function createSubmission(req: any, res: Response) {
   if ((req as any).imageUrl) {
     payload.imageUrl = (req as any).imageUrl;
     console.log("[FormController] Image URL added to payload:", payload.imageUrl);
+    
+    // Process image metadata if available
+    if (req.file) {
+      payload.imageMetadata = {
+        originalName: req.file.originalname,
+        mimeType: req.file.mimetype,
+        size: req.file.size,
+        uploadedAt: new Date().toISOString()
+      };
+      console.log("[FormController] Image metadata added:", payload.imageMetadata);
+    }
   } else {
     console.log("[FormController] No image URL found in request");
   }
@@ -28,6 +39,11 @@ export async function createSubmission(req: any, res: Response) {
     span?.addEvent('Creating form submission');
 
     const created = await FormService.createSubmission(sequelize, tenant, formKey, payload, userId);
+
+    // Validate that image processing was successful
+    if (payload.imageUrl && !created.imageUrl) {
+      console.warn("[FormController] Warning: Image URL was provided but not saved in the created record");
+    }
 
     span?.setAttribute('app.submission.id', created.id);
     span?.addEvent('Form submission created successfully');

@@ -45,6 +45,24 @@ async function uploadToMinio(req: Request, res: Response, next: NextFunction) {
   console.log("[MinIO] Uploading file:", fileName, "to bucket:", bucketName);
   console.log("[MinIO] File size:", file.size, "mimetype:", file.mimetype);
 
+  // Validate file type
+  const allowedMimeTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+  if (!allowedMimeTypes.includes(file.mimetype)) {
+    console.error("[MinIO] Invalid file type:", file.mimetype);
+    (req as any).imageUrl = null;
+    return next();
+  }
+
+  // Validate file size (max 10MB)
+  const maxSize = 10 * 1024 * 1024; // 10MB
+  if (file.size > maxSize) {
+    console.error("[MinIO] File too large:", file.size, "bytes");
+    (req as any).imageUrl = null;
+    return next();
+  }
+
+  console.log("[MinIO] File validation passed - Type:", file.mimetype, "Size:", file.size, "bytes");
+
   const params: AWS.S3.PutObjectRequest = {
     Bucket: bucketName,
     Key: fileName,

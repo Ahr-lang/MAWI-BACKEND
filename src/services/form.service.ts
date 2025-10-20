@@ -8,7 +8,21 @@ class FormService {
     span?.setAttribute('app.form.key', formKey);
     if (userId) span?.setAttribute('app.user.id', userId);
 
-  if (payload.imageUrl) span?.setAttribute("app.image.present", true)
+    // Process image if present
+    if (payload.imageUrl) {
+      span?.setAttribute("app.image.present", true);
+      console.log("[FormService] Processing image URL:", payload.imageUrl);
+      
+      // Validate image URL format
+      if (!payload.imageUrl.startsWith('http')) {
+        console.error("[FormService] Invalid image URL format:", payload.imageUrl);
+        throw new Error('Invalid image URL format');
+      }
+      
+      // Add image processing timestamp
+      payload.imageProcessedAt = new Date().toISOString();
+      console.log("[FormService] Image processed at:", payload.imageProcessedAt);
+    }
 
     return await FormRepository.insert(sequelize, tenant, formKey, payload, userId);
   }
