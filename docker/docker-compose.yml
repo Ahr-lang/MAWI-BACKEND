@@ -46,9 +46,9 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./observability/prometheus.yml:/etc/prom.yml
+      - ./observability/prometheus.yml:/etc/prometheus.yml
       - prometheus_data:/prometheus
-    command: ["--config.file=/etc/prom.yml", "--web.enable-remote-write-receiver", "--storage.tsdb.retention.time=30d"]
+    command: ["--config.file=/etc/prometheus.yml", "--web.enable-remote-write-receiver", "--storage.tsdb.retention.time=30d"]
     restart: unless-stopped
   grafana:
     image: grafana/grafana:latest

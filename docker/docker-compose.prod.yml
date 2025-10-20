@@ -32,10 +32,10 @@ services:
     ports:
       - "9090:9090"
     volumes:
-      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./observability/prometheus.yml:/etc/prometheus.yml
       - prometheus_data:/prometheus
     command: 
-      - --config.file=/etc/prometheus/prometheus.yml
+      - --config.file=/etc/prometheus.yml
       - --storage.tsdb.retention.time=30d
     restart: unless-stopped
   grafana:
