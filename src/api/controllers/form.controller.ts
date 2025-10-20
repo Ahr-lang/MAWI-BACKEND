@@ -5,9 +5,9 @@ import { formSubmissions } from '../../telemetry/metrics';
 
 export async function createSubmission(req: any, res: Response) {
   const span = trace.getActiveSpan();
-  span?.setAttribute('operation', 'form.submission');
-  span?.setAttribute('tenant', req.tenant);
-  span?.setAttribute('form.key', req.params.formKey);
+  span?.setAttribute('app.operation', 'form.submission');
+  span?.setAttribute('app.tenant', req.tenant);
+  span?.setAttribute('app.form.key', req.params.formKey);
 
   const sequelize = req.sequelize;
   const tenant = req.tenant as string;
@@ -15,12 +15,17 @@ export async function createSubmission(req: any, res: Response) {
   const payload = req.body || {};
   const userId = req.user?.id;
 
+  // Add image URL if uploaded
+  if ((req as any).imageUrl) {
+    payload.imageUrl = (req as any).imageUrl;
+  }
+
   try {
     span?.addEvent('Creating form submission');
 
     const created = await FormService.createSubmission(sequelize, tenant, formKey, payload, userId);
 
-    span?.setAttribute('submission.id', created.id);
+    span?.setAttribute('app.submission.id', created.id);
     span?.addEvent('Form submission created successfully');
 
     // Increment form submission counter
@@ -49,9 +54,9 @@ export async function createSubmission(req: any, res: Response) {
 
 export async function getUserForms(req: any, res: Response) {
   const span = trace.getActiveSpan();
-  span?.setAttribute('operation', 'form.getUserForms');
-  span?.setAttribute('tenant', req.tenant);
-  span?.setAttribute('form.key', req.params.formKey);
+  span?.setAttribute('app.operation', 'form.getUserForms');
+  span?.setAttribute('app.tenant', req.tenant);
+  span?.setAttribute('app.form.key', req.params.formKey);
 
   const sequelize = req.sequelize;
   const tenant = req.tenant as string;
@@ -63,7 +68,7 @@ export async function getUserForms(req: any, res: Response) {
 
     const forms = await FormService.getUserForms(sequelize, tenant, formKey, userId);
 
-    span?.setAttribute('forms.count', forms.length);
+    span?.setAttribute('app.forms.count', forms.length);
     span?.addEvent('User forms retrieved successfully');
 
     return res.status(200).json({
@@ -86,10 +91,10 @@ export async function getUserForms(req: any, res: Response) {
 
 export async function getFormById(req: any, res: Response) {
   const span = trace.getActiveSpan();
-  span?.setAttribute('operation', 'form.getById');
-  span?.setAttribute('tenant', req.tenant);
-  span?.setAttribute('form.key', req.params.formKey);
-  span?.setAttribute('form.id', req.params.formId);
+  span?.setAttribute('app.operation', 'form.getById');
+  span?.setAttribute('app.tenant', req.tenant);
+  span?.setAttribute('app.form.key', req.params.formKey);
+  span?.setAttribute('app.form.id', req.params.formId);
 
   const sequelize = req.sequelize;
   const tenant = req.tenant as string;
@@ -125,10 +130,10 @@ export async function getFormById(req: any, res: Response) {
 
 export async function updateForm(req: any, res: Response) {
   const span = trace.getActiveSpan();
-  span?.setAttribute('operation', 'form.update');
-  span?.setAttribute('tenant', req.tenant);
-  span?.setAttribute('form.key', req.params.formKey);
-  span?.setAttribute('form.id', req.params.formId);
+  span?.setAttribute('app.operation', 'form.update');
+  span?.setAttribute('app.tenant', req.tenant);
+  span?.setAttribute('app.form.key', req.params.formKey);
+  span?.setAttribute('app.form.id', req.params.formId);
 
   const sequelize = req.sequelize;
   const tenant = req.tenant as string;
@@ -163,10 +168,10 @@ export async function updateForm(req: any, res: Response) {
 
 export async function deleteForm(req: any, res: Response) {
   const span = trace.getActiveSpan();
-  span?.setAttribute('operation', 'form.delete');
-  span?.setAttribute('tenant', req.tenant);
-  span?.setAttribute('form.key', req.params.formKey);
-  span?.setAttribute('form.id', req.params.formId);
+  span?.setAttribute('app.operation', 'form.delete');
+  span?.setAttribute('app.tenant', req.tenant);
+  span?.setAttribute('app.form.key', req.params.formKey);
+  span?.setAttribute('app.form.id', req.params.formId);
 
   const sequelize = req.sequelize;
   const tenant = req.tenant as string;
@@ -202,8 +207,8 @@ export async function deleteForm(req: any, res: Response) {
 
 export async function getAllUserForms(req: any, res: Response) {
   const span = trace.getActiveSpan();
-  span?.setAttribute('operation', 'form.getAllUserForms');
-  span?.setAttribute('tenant', req.tenant);
+  span?.setAttribute('app.operation', 'form.getAllUserForms');
+  span?.setAttribute('app.tenant', req.tenant);
 
   const sequelize = req.sequelize;
   const tenant = req.tenant as string;
@@ -214,7 +219,7 @@ export async function getAllUserForms(req: any, res: Response) {
 
     const forms = await FormService.getAllUserForms(sequelize, tenant, userId);
 
-    span?.setAttribute('forms.count', forms.length);
+    span?.setAttribute('app.forms.count', forms.length);
     span?.addEvent('All user forms retrieved successfully');
 
     return res.status(200).json({
