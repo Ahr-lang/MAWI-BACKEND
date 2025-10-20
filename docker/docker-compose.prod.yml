@@ -7,10 +7,9 @@ services:
       dockerfile: docker/Dockerfile
       target: production
     image: mawi-backend:prod
-    ports:
-      - "3000:3000"
     environment:
       - PORT=3000
+      - SERVICE_URL_API=https://ekgcss8ww8o4ok480g08soo4.91.98.193.75.sslip.io
       - JWT_SECRET=${JWT_SECRET}
       - JWT_EXPIRES_IN=${JWT_EXPIRES_IN}
       - DB_HOST=${DB_HOST}
