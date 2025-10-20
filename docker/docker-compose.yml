@@ -64,7 +64,7 @@ services:
       - grafana_data:/var/lib/grafana
     restart: unless-stopped
   otel-collector:
-    image: mirror.gcr.io/library/otel/opentelemetry-collector:latest
+    image: otel/opentelemetry-collector:latest
     volumes:
       - ./observability/otel-collector-config.yaml:/etc/otelcol/config.yaml
     command: ["--config=/etc/otelcol/config.yaml"]
