@@ -29,8 +29,8 @@ services:
       - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://otel-collector:4318/v1/traces
       - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://otel-collector:4318/v1/metrics
       - OTEL_SERVICE_NAME=${OTEL_SERVICE_NAME:-mawi-backend}
-    expose:
-      - "3000"       # only expose internally, don't bind 80/443
+    ports:
+      - "3000:3000"  # Expose for Coolify's reverse proxy
     depends_on:
       - otel-collector
     restart: unless-stopped
@@ -81,21 +81,6 @@ services:
       - prometheus
     restart: unless-stopped
 
-  caddy:
-    image: caddy:2-alpine
-    ports:
-      - "80:80"
-      - "443:443"
-    volumes:
-      - ../caddy/Caddyfile.prod:/etc/caddy/Caddyfile:ro
-      - caddy_data:/data
-      - caddy_config:/config
-    depends_on:
-      - api
-    restart: unless-stopped
-
 volumes:
   grafana_data:
   prometheus_data:
-  caddy_data:
-  caddy_config:
