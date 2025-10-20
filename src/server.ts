@@ -35,7 +35,7 @@ async function startServer() {
     await connectDB();
 
     // Start periodic metrics updates for gauge metrics
-    MetricsUpdaterService.startPeriodicUpdates();
+    // MetricsUpdaterService.startPeriodicUpdates(); // Temporarily disabled due to missing tables
 
     /* ----------------------------- MIDDLEWARES ---------------------------- */
     app.use(cors());

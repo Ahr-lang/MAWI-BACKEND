@@ -1,6 +1,6 @@
 // src/api/routes/admin.routes.ts
 import { Router } from "express";
-import { getAllUsers, getUsersWithForms, getUserForms, getUserByEmail, createUserAdmin, getTopUsersByFormType } from "../controllers/admin.controller";
+import { getAllUsers, getUsersWithForms, getUserForms, getUserByEmail, createUserAdmin, getTopUsersByFormType, deleteUserById } from "../controllers/admin.controller";
 import { protectAuth } from "../middlewares/protect";
 import { ensureBackendUser } from "../middlewares/common/backendAuth";
 
@@ -23,5 +23,8 @@ router.get("/:tenant/admin/users/email/:email", ...adminAuth, getUserByEmail);
 
 // Crear usuario en tenant (admin)
 router.post("/:tenant/admin/users", ...adminAuth, createUserAdmin);
+
+// Eliminar usuario por ID (DELETE /:tenant/admin/users/:userId)
+router.delete("/:tenant/admin/users/:userId", ...adminAuth, deleteUserById);
 
 export default router;
