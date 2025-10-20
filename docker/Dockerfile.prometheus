@@ -1,4 +1,4 @@
-FROM quay.io/prometheus/prometheus:v2.54.1
+FROM prom/prometheus:v2.54.1
 
 # Copy the prometheus configuration into the image
 COPY observability/prometheus.yml /etc/prometheus/prometheus.yml
