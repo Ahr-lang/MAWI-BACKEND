@@ -29,7 +29,7 @@ services:
       - ../src:/usr/src/app/src
     restart: unless-stopped
   caddy:
-    image: caddy:alpine
+    image: mirror.gcr.io/library/caddy:alpine
     ports:
       - "80:80"
       - "443:443"
@@ -42,7 +42,7 @@ services:
       - api
     restart: unless-stopped
   prometheus:
-    image: prom/prometheus:latest
+    image: mirror.gcr.io/library/prom/prometheus:latest
     ports:
       - "9090:9090"
     volumes:
@@ -51,7 +51,7 @@ services:
     command: ["--config.file=/etc/prometheus/prometheus.yml", "--web.enable-remote-write-receiver", "--storage.tsdb.retention.time=30d"]
     restart: unless-stopped
   grafana:
-    image: grafana/grafana:latest
+    image: mirror.gcr.io/library/grafana/grafana:latest
     ports:
       - "3002:3000"  # Changed from 3001 to avoid port conflict
     environment:
@@ -64,7 +64,7 @@ services:
       - grafana_data:/var/lib/grafana
     restart: unless-stopped
   otel-collector:
-    image: otel/opentelemetry-collector:latest
+    image: mirror.gcr.io/library/otel/opentelemetry-collector:latest
     volumes:
       - ./observability/otel-collector-config.yaml:/etc/otelcol/config.yaml
     command: ["--config=/etc/otelcol/config.yaml"]

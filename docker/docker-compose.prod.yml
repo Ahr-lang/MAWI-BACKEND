@@ -24,12 +24,7 @@ services:
     expose:
       - "3000"       # only expose internally, don't bind 80/443
     restart: unless-stopped
-  tempo:
-    image: grafana/tempo:latest
-    ports:
-      - "4318:4318"  # OTLP traces
-      - "3200:3200"  # Tempo API
-    restart: unless-stopped
+ 
   prometheus:
     image: prom/prometheus:latest
     ports:
@@ -38,20 +33,19 @@ services:
       - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml
     restart: unless-stopped
   grafana:
-    image: grafana/grafana:latest
+    image: mirror.gcr.io/library/grafana/grafana:latest
     ports:
       - "3002:3000"  # Changed from 3001 to avoid port conflict
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
     restart: unless-stopped
   otel-collector:
-    image: otel/opentelemetry-collector:latest
+    image: mirror.gcr.io/library/otel/opentelemetry-collector:latest
     volumes:
       - ./observability/otel-collector-config.yaml:/etc/otel-collector-config.yaml
     command: ["--config=/etc/otel-collector-config.yaml"]
     ports:
       - "4319:4318"  # Expose collector on 4319 to avoid conflict with Tempo
     depends_on:
-      - tempo
       - prometheus
     restart: unless-stopped

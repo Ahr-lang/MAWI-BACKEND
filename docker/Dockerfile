@@ -1,5 +1,5 @@
 # Build stage
-FROM node:20-alpine AS builder
+FROM mirror.gcr.io/library/node:20-alpine AS builder
 WORKDIR /usr/src/app
 COPY package*.json ./
 RUN npm ci
@@ -7,7 +7,7 @@ COPY . .
 RUN npm run build
 
 # Development stage
-FROM node:20-alpine AS dev
+FROM mirror.gcr.io/library/node:20-alpine AS dev
 WORKDIR /usr/src/app
 ENV NODE_ENV=development
 COPY package*.json ./
@@ -21,7 +21,7 @@ EXPOSE 3000
 CMD ["npm", "run", "dev"]
 
 # Production stage
-FROM node:20-alpine AS production
+FROM mirror.gcr.io/library/node:20-alpine AS production
 WORKDIR /usr/src/app
 ENV NODE_ENV=production
 COPY package*.json ./
