@@ -41,16 +41,6 @@ services:
     depends_on:
       - api
     restart: unless-stopped
-  tempo:
-    image: grafana/tempo:latest
-    ports:
-      - "4318:4318"  # OTLP traces
-      - "3200:3200"  # Tempo API
-    volumes:
-      - ./observability/tempo-config.yaml:/etc/tempo.yaml
-      - tempo_data:/var/tempo
-    command: ["-config.file=/etc/tempo.yaml"]
-    restart: unless-stopped
   prometheus:
     image: prom/prometheus:latest
     ports:
@@ -77,12 +67,11 @@ services:
   otel-collector:
     image: otel/opentelemetry-collector:latest
     volumes:
-      - ./observability/otel-collector-config.yaml:/etc/otel.yaml
-    command: ["--config=/etc/otel.yaml"]
+      - ./observability/otel-collector-config.yaml:/etc/otel-collector/config.yaml
+    command: ["--config=/etc/otel-collector/config.yaml"]
     ports:
-      - "4319:4318"  # Expose collector on 4319 to avoid conflict with Tempo
+      - "4319:4318"  # Expose collector on 4319
     depends_on:
-      - tempo
       - prometheus
     restart: unless-stopped
 
@@ -91,4 +80,3 @@ volumes:
   caddy_config:
   grafana_data:
   prometheus_data:
-  tempo_data:

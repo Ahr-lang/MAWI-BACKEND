@@ -27,25 +27,15 @@ services:
       - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://otel-collector:4318/v1/traces
       - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://otel-collector:4318/v1/metrics
     restart: unless-stopped
-  tempo:
-    image: grafana/tempo:latest
-    ports:
-      - "4318:4318"  # OTLP traces
-      - "3200:3200"  # Tempo API
-    volumes:
-      - ./observability/tempo-config.yaml:/etc/tempo.yaml
-      - tempo_data:/var/tempo
-    command: ["-config.file=/etc/tempo.yaml"]
-    restart: unless-stopped
   prometheus:
     image: prom/prometheus:latest
     ports:
       - "9090:9090"
     volumes:
-      - ./observability/prometheus.yml:/etc/prom.yml
+      - ./observability/prometheus.yml:/etc/prometheus/prometheus.yml
       - prometheus_data:/prometheus
     command: 
-      - --config.file=/etc/prom.yml
+      - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.retention.time=30d
     restart: unless-stopped
   grafana:
@@ -55,27 +45,24 @@ services:
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
       - GF_PATHS_CONFIG=/etc/grafana/custom.ini
-      - ./grafana/custom.ini:/etc/grafana/custom.ini:ro
-
       - GF_LOG_LEVEL=debug
       - GF_FEATURE_TOGGLES_PROVISIONING=true
       - GF_FEATURE_TOGGLES_KUBERNETESDASHBOARDS=true
     volumes:
+      - ./grafana/custom.ini:/etc/grafana/custom.ini:ro
       - grafana_data:/var/lib/grafana
     restart: unless-stopped
   otel-collector:
     image: otel/opentelemetry-collector:latest
     volumes:
-      - ./observability/otel-collector-config.yaml:/etc/otel.yaml
-    command: ["--config=/etc/otel.yaml"]
+      - ./observability/otel-collector-config.yaml:/etc/otel-collector/config.yaml
+    command: ["--config=/etc/otel-collector/config.yaml"]
     ports:
       - "4319:4318"  # Expose collector on 4319 to avoid conflict with Tempo
     depends_on:
-      - tempo
       - prometheus
     restart: unless-stopped
 
 volumes:
   grafana_data:
   prometheus_data:
-  tempo_data:
