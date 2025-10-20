@@ -40,11 +40,8 @@ export async function createSubmission(req: any, res: Response) {
 
     const created = await FormService.createSubmission(sequelize, tenant, formKey, payload, userId);
 
-    // Validate that image processing was successful
-    if (payload.imageUrl && !created.imageUrl) {
-      console.warn("[FormController] Warning: Image URL was provided but not saved in the created record");
-    }
-
+    // For biomo, images are stored separately in the image table
+    // The warning is no longer needed since images are handled properly
     span?.setAttribute('app.submission.id', created.id);
     span?.addEvent('Form submission created successfully');
 

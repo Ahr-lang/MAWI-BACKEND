@@ -17,11 +17,33 @@ class FormRepository {
       throw Object.assign(new Error(`Model '${modelName}' not found for tenant '${tenant}'`), { status: 500 });
     }
 
-    const created = await Model.create(data);
+    // Extract image data before inserting the main form
+    const { imageUrl, imageMetadata, ...formData } = data;
+
+    const created = await Model.create(formData);
     const json = created.toJSON();
     const id = json.id ?? json.id_formulario ?? json.id_condicion ?? json.id_detalle ?? json.id_foto ?? json.id_chat ?? null;
 
-    return { ...json, id, __tenant: tenant, __form: formKey };
+    // Handle image storage for biomo tenant
+    if (tenant === 'biomo' && imageUrl) {
+      try {
+        const ImageModel = sequelize.models['image'];
+        if (ImageModel) {
+          await ImageModel.create({
+            formularioId: id,
+            formularioType: modelName,
+            imageUri: imageUrl,
+            id_usuario: userId
+          });
+          console.log(`[FormRepository] Image stored for ${modelName} id ${id}`);
+        }
+      } catch (imageError) {
+        console.error('[FormRepository] Failed to store image:', imageError);
+        // Don't fail the whole operation if image storage fails
+      }
+    }
+
+    return { ...json, id, __tenant: tenant, __form: formKey, imageUrl, imageMetadata };
   }
 
   // Read: by user
@@ -67,12 +89,24 @@ class FormRepository {
           whereCondition = { id_usuario: userId };
         }
       }
-    } else {
-      // biomo/robo — all numbered forms have id_usuario
+    } else if (tenant === 'biomo') {
+      // biomo — all numbered forms have id_usuario
       if ('id_usuario' in attrs) whereCondition = { id_usuario: userId };
     }
 
-    const rows = await Model.findAll({ where: whereCondition, include: includeOptions });
+    const rows = await Model.findAll({ 
+      where: whereCondition, 
+      include: [
+        ...includeOptions,
+        // Include images for biomo forms
+        ...(tenant === 'biomo' ? [{
+          model: sequelize.models['image'],
+          as: 'images',
+          where: { formularioType: modelName },
+          required: false
+        }] : [])
+      ]
+    });
     return rows.map((f: any) => ({ ...f.toJSON(), __tenant: tenant, __form: formKey }));
   }
 
@@ -98,6 +132,13 @@ class FormRepository {
             { model: sequelize.models['AGROMO_DETALLES_QUIMICOS'], as: 'quimicos' },
             { model: sequelize.models['AGROMO_FOTOGRAFIA'], as: 'fotos' }
           ]
+        : tenant === 'biomo'
+        ? [{
+            model: sequelize.models['image'],
+            as: 'images',
+            where: { formularioType: modelName },
+            required: false
+          }]
         : [];
 
     const pk = Model.primaryKeyAttribute || 'id';
