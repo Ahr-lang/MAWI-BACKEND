@@ -81,6 +81,21 @@ services:
       - prometheus
     restart: unless-stopped
 
+  caddy:
+    image: caddy:2-alpine
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ../caddy/Caddyfile.prod:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      - api
+    restart: unless-stopped
+
 volumes:
   grafana_data:
   prometheus_data:
+  caddy_data:
+  caddy_config:
