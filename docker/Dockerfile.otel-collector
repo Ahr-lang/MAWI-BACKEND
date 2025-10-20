@@ -1,0 +1,10 @@
+FROM otel/opentelemetry-collector:latest
+
+# Copy the OTEL collector configuration into the image
+COPY observability/otel-collector-config.yaml /etc/otelcol/config.yaml
+
+# Expose OTEL collector ports
+EXPOSE 4318
+
+# Use the default otel collector command with our config
+CMD ["--config=/etc/otelcol/config.yaml"]
