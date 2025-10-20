@@ -31,11 +31,13 @@ services:
     image: prom/prometheus:latest
     ports:
       - "9090:9090"
+    configs:
+      - source: prometheus_config
+        target: /etc/prometheus/prometheus.yml
     volumes:
-      - ./observability/prometheus.yml:/tmp/prometheus.yml
       - prometheus_data:/prometheus
     command: 
-      - --config.file=/tmp/prometheus.yml
+      - --config.file=/etc/prometheus/prometheus.yml
       - --storage.tsdb.retention.time=30d
     restart: unless-stopped
   grafana:
@@ -44,19 +46,22 @@ services:
       - "3002:3000"  # Changed from 3001 to avoid port conflict
     environment:
       - GF_SECURITY_ADMIN_PASSWORD=admin
-      - GF_PATHS_CONFIG=/tmp/grafana.ini
+      - GF_PATHS_CONFIG=/etc/grafana/grafana.ini
       - GF_LOG_LEVEL=debug
       - GF_FEATURE_TOGGLES_PROVISIONING=true
       - GF_FEATURE_TOGGLES_KUBERNETESDASHBOARDS=true
+    configs:
+      - source: grafana_config
+        target: /etc/grafana/grafana.ini
     volumes:
-      - ./grafana/custom.ini:/tmp/grafana.ini:ro
       - grafana_data:/var/lib/grafana
     restart: unless-stopped
   otel-collector:
     image: otel/opentelemetry-collector:latest
-    volumes:
-      - ./observability/otel-collector-config.yaml:/tmp/otel-config.yaml
-    command: ["--config=/tmp/otel-config.yaml"]
+    configs:
+      - source: otel_config
+        target: /etc/otelcol/config.yaml
+    command: ["--config=/etc/otelcol/config.yaml"]
     ports:
       - "4319:4318"  # Expose collector on 4319 to avoid conflict with Tempo
     depends_on:
@@ -66,3 +71,11 @@ services:
 volumes:
   grafana_data:
   prometheus_data:
+
+configs:
+  prometheus_config:
+    file: ./observability/prometheus.yml
+  otel_config:
+    file: ./observability/otel-collector-config.yaml
+  grafana_config:
+    file: ./grafana/custom.ini
