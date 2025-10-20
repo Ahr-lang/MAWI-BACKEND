@@ -154,6 +154,12 @@ export default class UserService {
     }
   }
 
+  static async deleteUserById(sequelize: any, userId: number) {
+    const User = sequelize.models.User;
+    const deletedCount = await User.destroy({ where: { id: userId } });
+    return deletedCount > 0;
+  }
+
   // Método para obtener el usuario con más formularios de cada tipo
   static async getTopUsersByFormType(sequelize: any, tenant: string) {
     const tracer = trace.getTracer('user-service');

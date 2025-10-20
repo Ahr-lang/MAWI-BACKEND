@@ -190,7 +190,6 @@ async function createUserAdmin(req: any, res: Response) {
     return res.status(500).json({ error: 'Server error creating user' });
   }
 }
-
 // Función para obtener el usuario con más formularios de cada tipo (solo para usuarios backend)
 async function getTopUsersByFormType(req: any, res: Response) {
   const span = trace.getActiveSpan();
