@@ -183,4 +183,66 @@ export default class UserService {
       throw err;
     }
   }
+
+  // Método para obtener errores por tenant
+  static async getTenantErrors() {
+    const tracer = trace.getTracer('user-service');
+    const span = tracer.startSpan('getTenantErrors');
+    span.setAttribute('operation', 'user.getTenantErrors');
+
+    try {
+      span.addEvent('Fetching tenant errors from Prometheus');
+
+      const { getErrorsByTenantData, getTotalErrorsData, getApplicationErrorsByTenantData } = await import('../services/metrics.service');
+
+      // Get different types of error data
+      const [httpErrors, totalErrors, appErrors] = await Promise.all([
+        getErrorsByTenantData(),
+        getTotalErrorsData(),
+        getApplicationErrorsByTenantData()
+      ]);
+
+      const result = {
+        httpErrors,
+        totalErrors,
+        applicationErrors: appErrors
+      };
+
+      span.setAttribute('errors.http.count', httpErrors.length);
+      span.setAttribute('errors.app.count', appErrors.length);
+      span.addEvent('Tenant errors fetched successfully');
+
+      span.end();
+      return result;
+    } catch (err: any) {
+      span.recordException(err);
+      span.end();
+      throw err;
+    }
+  }
+
+  // Método para obtener datos de página de estado
+  static async getStatusPageData() {
+    const tracer = trace.getTracer('user-service');
+    const span = tracer.startSpan('getStatusPageData');
+    span.setAttribute('operation', 'user.getStatusPageData');
+
+    try {
+      span.addEvent('Fetching status page data from Prometheus');
+
+      const { getStatusPageData } = await import('../services/metrics.service');
+
+      const statusData = await getStatusPageData();
+
+      span.setAttribute('status.hours', statusData.data.length);
+      span.addEvent('Status page data fetched successfully');
+
+      span.end();
+      return statusData;
+    } catch (err: any) {
+      span.recordException(err);
+      span.end();
+      throw err;
+    }
+  }
 }

@@ -114,7 +114,7 @@ async function getUserForms(req: any, res: Response) {
 }
 
 // Exportamos las funciones
-export { getAllUsers, getUsersWithForms, getUserForms, createUserAdmin, getTopUsersByFormType };
+export { getAllUsers, getUsersWithForms, getUserForms, createUserAdmin, getTopUsersByFormType, getTenantErrors, deleteUserAdmin, getStatusPageData };
 
 // Obtener usuario por email/identifier y sus formularios (admin)
 export async function getUserByEmail(req: any, res: Response) {
@@ -190,6 +190,7 @@ async function createUserAdmin(req: any, res: Response) {
     return res.status(500).json({ error: 'Server error creating user' });
   }
 }
+
 // Función para obtener el usuario con más formularios de cada tipo (solo para usuarios backend)
 async function getTopUsersByFormType(req: any, res: Response) {
   const span = trace.getActiveSpan();
@@ -223,5 +224,105 @@ async function getTopUsersByFormType(req: any, res: Response) {
     span?.addEvent('Error obteniendo usuarios top por tipo de formulario para admin');
     console.error("[AdminGetTopUsersByFormType] Error:", err);
     return res.status(500).json({ error: "Server error getting top users by form type" });
+  }
+}
+
+// Función para obtener errores por tenant (solo para usuarios backend)
+async function getTenantErrors(req: any, res: Response) {
+  const span = trace.getActiveSpan();
+  span?.setAttribute('operation', 'admin.getTenantErrors');
+  span?.setAttribute('admin.user', req.user?.username);
+
+  try {
+    span?.addEvent('Obteniendo errores por tenant para admin');
+
+    // Llamamos al servicio para obtener los errores
+    const errors = await UserService.getTenantErrors();
+
+    span?.setAttribute('errors.http.count', errors.httpErrors?.length || 0);
+    span?.setAttribute('errors.app.count', errors.applicationErrors?.length || 0);
+    span?.addEvent('Errores por tenant obtenidos exitosamente');
+
+    // Respondemos con los resultados
+    return res.status(200).json({
+      success: true,
+      message: 'Errores por tenant obtenidos exitosamente',
+      data: errors,
+      timestamp: new Date().toISOString()
+    });
+  } catch (err: any) {
+    span?.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
+    span?.recordException(err);
+
+    span?.addEvent('Error obteniendo errores por tenant para admin');
+    console.error("[AdminGetTenantErrors] Error:", err);
+    return res.status(500).json({ error: "Server error getting tenant errors" });
+  }
+}
+
+// Función para obtener datos de página de estado (solo para usuarios backend)
+async function getStatusPageData(req: any, res: Response) {
+  const span = trace.getActiveSpan();
+  span?.setAttribute('operation', 'admin.getStatusPageData');
+  span?.setAttribute('admin.user', req.user?.username);
+
+  try {
+    span?.addEvent('Obteniendo datos de página de estado para admin');
+
+    // Llamamos al servicio para obtener los datos de estado
+    const statusData = await UserService.getStatusPageData();
+
+    span?.setAttribute('status.hours', statusData.data.length);
+    span?.addEvent('Datos de página de estado obtenidos exitosamente');
+
+    // Respondemos con los resultados
+    return res.status(200).json({
+      success: true,
+      message: 'Datos de página de estado obtenidos exitosamente',
+      data: statusData,
+      timestamp: new Date().toISOString()
+    });
+  } catch (err: any) {
+    span?.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
+    span?.recordException(err);
+
+    span?.addEvent('Error obteniendo datos de página de estado para admin');
+    console.error("[AdminGetStatusPageData] Error:", err);
+    return res.status(500).json({ error: "Server error getting status page data" });
+  }
+}
+
+// Eliminar usuario (solo backend)
+async function deleteUserAdmin(req: any, res: Response) {
+  const span = trace.getActiveSpan();
+  span?.setAttribute('operation', 'admin.deleteUser');
+  span?.setAttribute('tenant', req.tenant);
+  span?.setAttribute('admin.user', req.user?.username);
+  span?.setAttribute('target.user.id', req.params.userId);
+
+  const sequelize = req.sequelize;
+  const tenant = req.tenant as string;
+  const userId = parseInt(req.params.userId);
+
+  try {
+    span?.addEvent('Intentando eliminar usuario');
+
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: 'ID de usuario inválido' });
+    }
+
+    const deleted = await UserService.deleteUserById(sequelize, userId);
+
+    if (!deleted) {
+      return res.status(404).json({ error: 'Usuario no encontrado o no eliminado' });
+    }
+
+    span?.addEvent('Usuario eliminado exitosamente');
+    return res.status(200).json({ message: 'Usuario eliminado correctamente', tenant, userId });
+  } catch (err: any) {
+    span?.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
+    span?.recordException(err);
+    console.error('[AdminDeleteUser] Error:', err);
+    return res.status(500).json({ error: 'Error al eliminar usuario' });
   }
 }

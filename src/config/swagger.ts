@@ -874,6 +874,155 @@ const extraPaths = {
         500: { description: "Error del servidor" }
       }
     }
+  },
+  "/api/{tenant}/admin/errors": {
+    get: {
+      summary: "Obtener errores por tenant (solo para usuarios backend)",
+      tags: ["Administración"],
+      description: "Endpoint administrativo que permite a usuarios del tenant 'back' obtener métricas de errores de todos los tenants desde Prometheus, incluyendo errores HTTP 5xx y errores de aplicación.",
+      parameters: [
+        {
+          in: "path",
+          name: "tenant",
+          required: true,
+          schema: {
+            type: "string",
+            enum: ["agromo", "biomo", "robo", "back"]
+          },
+          description: "Tenant del usuario (debe ser 'back' para acceso administrativo)"
+        }
+      ],
+      security: [
+        {
+          bearerAuth: [],
+          "Tenant API Key": []
+        }
+      ],
+      responses: {
+        200: {
+          description: "Errores por tenant obtenidos exitosamente",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  success: { type: "boolean", example: true },
+                  message: { type: "string", example: "Errores por tenant obtenidos exitosamente" },
+                  data: {
+                    type: "object",
+                    properties: {
+                      httpErrors: {
+                        type: "array",
+                        description: "Errores HTTP 5xx por tenant",
+                        items: {
+                          type: "object",
+                          properties: {
+                            tenant: { type: "string", example: "agromo" },
+                            status: { type: "string", example: "500" },
+                            errorRate: { type: "number", example: 0.5 }
+                          }
+                        }
+                      },
+                      totalErrors: {
+                        type: "object",
+                        properties: {
+                          totalErrorRate: { type: "number", example: 2.3 }
+                        }
+                      },
+                      applicationErrors: {
+                        type: "array",
+                        description: "Errores de aplicación por tenant",
+                        items: {
+                          type: "object",
+                          properties: {
+                            tenant: { type: "string", example: "biomo" },
+                            applicationErrors: { type: "number", example: 1.2 }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  timestamp: { type: "string", format: "date-time" }
+                }
+              }
+            }
+          }
+        },
+        401: { description: "Token inválido o ausente" },
+        403: { description: "Acceso denegado - solo usuarios del tenant backend" },
+        500: { description: "Error del servidor" }
+      }
+    }
+  },
+  "/api/{tenant}/admin/status": {
+    get: {
+      summary: "Obtener datos de página de estado (solo para usuarios backend)",
+      tags: ["Administración"],
+      description: "Endpoint administrativo que proporciona datos para una página de estado mostrando actividad por hora en las últimas 24 horas con indicadores de error. Verde: <1% errores, Amarillo: 1-5% errores, Rojo: >5% errores o sin actividad.",
+      parameters: [
+        {
+          in: "path",
+          name: "tenant",
+          required: true,
+          schema: {
+            type: "string",
+            enum: ["agromo", "biomo", "robo", "back"]
+          },
+          description: "Tenant del usuario (debe ser 'back' para acceso administrativo)"
+        }
+      ],
+      security: [
+        {
+          bearerAuth: [],
+          "Tenant API Key": []
+        }
+      ],
+      responses: {
+        200: {
+          description: "Datos de página de estado obtenidos exitosamente",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  success: { type: "boolean", example: true },
+                  message: { type: "string", example: "Datos de página de estado obtenidos exitosamente" },
+                  data: {
+                    type: "object",
+                    properties: {
+                      period: { type: "string", example: "24h" },
+                      data: {
+                        type: "array",
+                        description: "Datos por hora para las últimas 24 horas",
+                        items: {
+                          type: "object",
+                          properties: {
+                            hour: { type: "integer", example: 14 },
+                            timestamp: { type: "number", example: 1729363200000 },
+                            requests: { type: "integer", example: 1250 },
+                            errors: { type: "integer", example: 12 },
+                            errorRate: { type: "number", example: 0.96 },
+                            status: {
+                              type: "string",
+                              enum: ["green", "yellow", "red"],
+                              example: "green"
+                            }
+                          }
+                        }
+                      }
+                    }
+                  },
+                  timestamp: { type: "string", format: "date-time" }
+                }
+              }
+            }
+          }
+        },
+        401: { description: "Token inválido o ausente" },
+        403: { description: "Acceso denegado - solo usuarios del tenant backend" },
+        500: { description: "Error del servidor" }
+      }
+    }
   }
 };
 
