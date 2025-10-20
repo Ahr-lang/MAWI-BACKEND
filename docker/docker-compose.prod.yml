@@ -1,4 +1,4 @@
-\version: "3.9"
+version: "3.9"
 
 services:
   api:
@@ -29,7 +29,7 @@ services:
       OTEL_EXPORTER_OTLP_METRICS_ENDPOINT: "http://otel-collector:4318/v1/metrics"
       OTEL_SERVICE_NAME: "${OTEL_SERVICE_NAME:-mawi-backend}"
     expose:
-      - "3000"   # internal only; reverse proxy will hit api:3000
+      - "3000"   # internal only; proxy will hit api:3000
     depends_on:
       - otel-collector
     restart: unless-stopped
@@ -43,7 +43,7 @@ services:
       - traefik.enable=true
       # Tell the proxy which port to use inside the container
       - traefik.http.services.api.loadbalancer.server.port=3000
-      # Optional: have the proxy check your real health endpoint
+      # Optional: proxy healthcheck to your real health endpoint
       - traefik.http.services.api.loadbalancer.healthcheck.path=/healthz
       - traefik.http.services.api.loadbalancer.healthcheck.interval=10s
 
@@ -61,7 +61,7 @@ services:
   grafana:
     build:
       context: .
-    dockerfile: Dockerfile.grafana
+      dockerfile: Dockerfile.grafana   # <-- moved under build (correct)
     image: mawi-grafana:prod
     ports:
       - "3002:3000"
