@@ -1,4 +1,4 @@
-FROM otel/opentelemetry-collector:latest
+FROM otel/opentelemetry-collector:0.111.0
 
 # Copy the OTEL collector configuration into the image
 COPY observability/otel-collector-config.yaml /etc/otelcol/config.yaml

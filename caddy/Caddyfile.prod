@@ -1,0 +1,13 @@
+{
+    email admin@ecoranger.org  # opcional: para avisos de ACME
+}
+
+ekgcss8ww8o4ok480g08soo4.91.98.193.75.sslip.io {
+    reverse_proxy api:3000
+    # Caddy hace HTTP->HTTPS y gestiona Let's Encrypt automáticamente
+}
+
+localhost {
+    reverse_proxy 127.0.0.1:3000
+    tls internal  # Genera certificado auto-firmado para desarrollo local
+}
