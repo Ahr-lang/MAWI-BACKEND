@@ -821,7 +821,7 @@ const extraPaths = {
     get: {
       summary: "Obtener datos de página de estado (solo para usuarios backend)",
       tags: ["Administración"],
-      description: "Endpoint administrativo que proporciona datos para una página de estado mostrando actividad por hora en las últimas 24 horas con indicadores de error. Verde: <1% errores, Amarillo: 1-5% errores, Rojo: >5% errores o sin actividad.",
+      description: "Endpoint administrativo que proporciona datos para una página de estado mostrando actividad por hora en las últimas 24 horas con indicadores de error. Verde: Sin errores, Amarillo: Errores pero solicitudes exitosas, Rojo: Solo errores.",
       parameters: [
         {
           in: "path",

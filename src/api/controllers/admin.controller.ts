@@ -4,6 +4,63 @@ import { trace, SpanStatusCode } from '@opentelemetry/api';
 import UserService from '../../services/user.service';
 import FormService from '../../services/form.service';
 
+// Helper function for detailed admin error logging and response
+function handleAdminError(
+  err: any,
+  span: any,
+  operation: string,
+  req: any,
+  res: Response,
+  context?: Record<string, any>
+) {
+  // Log detailed error information
+  const errorDetails = {
+    operation,
+    tenant: req.tenant,
+    adminUser: req.user?.username,
+    adminUserId: req.user?.id,
+    userAgent: req.get('User-Agent'),
+    ip: req.ip,
+    method: req.method,
+    url: req.url,
+    params: req.params,
+    query: req.query,
+    body: req.method !== 'GET' ? req.body : undefined,
+    context,
+    error: {
+      message: err.message,
+      stack: err.stack,
+      name: err.name,
+      code: err.code,
+      sql: err.sql, // For database errors
+      sqlState: err.sqlState,
+      sqlMessage: err.sqlMessage
+    },
+    timestamp: new Date().toISOString()
+  };
+
+  console.error(`[AdminError:${operation}]`, JSON.stringify(errorDetails, null, 2));
+
+  // Set span error
+  span?.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
+  span?.recordException(err);
+  span?.addEvent(`Error in ${operation}`);
+
+  // Return detailed error for admin users (in development/debugging)
+  const isDevelopment = process.env.NODE_ENV === 'development';
+  const errorResponse = isDevelopment ? {
+    error: "Server error",
+    operation,
+    details: {
+      message: err.message,
+      code: err.code,
+      timestamp: new Date().toISOString()
+    }
+  } : { error: "Server error" };
+
+  return res.status(500).json(errorResponse);
+}
+
 // Función para obtener todos los usuarios de un tenant (solo para usuarios backend)
 async function getAllUsers(req: any, res: Response) {
   const span = trace.getActiveSpan();
@@ -31,12 +88,7 @@ async function getAllUsers(req: any, res: Response) {
       count: users.length
     });
   } catch (err: any) {
-    span?.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
-    span?.recordException(err);
-
-    span?.addEvent('Error obteniendo usuarios para admin');
-    console.error("[AdminGetUsers] Error:", err);
-    return res.status(500).json({ error: "Server error getting users" });
+    return handleAdminError(err, span, 'getAllUsers', req, res);
   }
 }
 
@@ -67,12 +119,7 @@ async function getUsersWithForms(req: any, res: Response) {
       count: users.length
     });
   } catch (err: any) {
-    span?.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
-    span?.recordException(err);
-
-    span?.addEvent('Error obteniendo usuarios con formularios para admin');
-    console.error("[AdminGetUsersWithForms] Error:", err);
-    return res.status(500).json({ error: "Server error getting users with forms" });
+    return handleAdminError(err, span, 'getUsersWithForms', req, res);
   }
 }
 
@@ -104,12 +151,8 @@ async function getUserForms(req: any, res: Response) {
       count: forms.length
     });
   } catch (err: any) {
-    span?.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
-    span?.recordException(err);
-
     if (err.status) return res.status(err.status).json({ error: err.message });
-    console.error('[AdminGetUserForms] Error:', err);
-    return res.status(500).json({ error: 'Error del servidor al obtener formularios del usuario' });
+    return handleAdminError(err, span, 'getUserForms', req, res, { userId: req.params.userId });
   }
 }
 
@@ -146,10 +189,7 @@ export async function getUserByEmail(req: any, res: Response) {
       count: forms.length
     });
   } catch (err: any) {
-    span?.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
-    span?.recordException(err);
-    console.error('[AdminGetUserByEmail] Error:', err);
-    return res.status(500).json({ error: 'Error del servidor al obtener actividad del usuario' });
+    return handleAdminError(err, span, 'getUserByEmail', req, res, { identifier: req.params.email });
   }
 }
 
@@ -179,15 +219,10 @@ async function createUserAdmin(req: any, res: Response) {
 
     return res.status(201).json({ message: 'Usuario creado exitosamente', tenant, user: newUser });
   } catch (err: any) {
-    span?.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
-    span?.recordException(err);
-
     if (err.message === 'Username already taken') {
       return res.status(409).json({ error: err.message });
     }
-
-    console.error('[AdminCreateUser] Error:', err);
-    return res.status(500).json({ error: 'Error del servidor al crear usuario' });
+    return handleAdminError(err, span, 'createUserAdmin', req, res, { username: req.body?.username, user_email: req.body?.user_email });
   }
 }
 
@@ -218,12 +253,7 @@ async function getTopUsersByFormType(req: any, res: Response) {
       count: topUsers.length
     });
   } catch (err: any) {
-    span?.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
-    span?.recordException(err);
-
-    span?.addEvent('Error obteniendo usuarios top por tipo de formulario para admin');
-    console.error("[AdminGetTopUsersByFormType] Error:", err);
-    return res.status(500).json({ error: "Error del servidor al obtener usuarios principales por tipo de formulario" });
+    return handleAdminError(err, span, 'getTopUsersByFormType', req, res);
   }
 }
 
@@ -276,12 +306,7 @@ async function deleteUserById(req: any, res: Response) {
     });
 
   } catch (err: any) {
-    span?.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
-    span?.recordException(err);
-
-    span?.addEvent('Error eliminando usuario por ID');
-    console.error("[AdminDeleteUserById] Error:", err);
-    return res.status(500).json({ error: "Error del servidor al eliminar usuario" });
+    return handleAdminError(err, span, 'deleteUserById', req, res, { userId: req.params.userId });
   }
 }
 
@@ -309,12 +334,7 @@ async function getTenantErrors(req: any, res: Response) {
       timestamp: new Date().toISOString()
     });
   } catch (err: any) {
-    span?.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
-    span?.recordException(err);
-
-    span?.addEvent('Error obteniendo errores por tenant para admin');
-    console.error("[AdminGetTenantErrors] Error:", err);
-    return res.status(500).json({ error: "Error del servidor al obtener errores de tenant" });
+    return handleAdminError(err, span, 'getTenantErrors', req, res);
   }
 }
 
@@ -341,12 +361,7 @@ async function getStatusPageData(req: any, res: Response) {
       timestamp: new Date().toISOString()
     });
   } catch (err: any) {
-    span?.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
-    span?.recordException(err);
-
-    span?.addEvent('Error obteniendo datos de página de estado para admin');
-    console.error("[AdminGetStatusPageData] Error:", err);
-    return res.status(500).json({ error: "Error del servidor al obtener datos de página de estado" });
+    return handleAdminError(err, span, 'getStatusPageData', req, res);
   }
 }
 
@@ -378,9 +393,6 @@ async function deleteUserAdmin(req: any, res: Response) {
     span?.addEvent('Usuario eliminado exitosamente');
     return res.status(200).json({ message: 'Usuario eliminado correctamente', tenant, userId });
   } catch (err: any) {
-    span?.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
-    span?.recordException(err);
-    console.error('[AdminDeleteUser] Error:', err);
-    return res.status(500).json({ error: 'Error al eliminar usuario' });
+    return handleAdminError(err, span, 'deleteUserAdmin', req, res, { userId: req.params.userId });
   }
 }

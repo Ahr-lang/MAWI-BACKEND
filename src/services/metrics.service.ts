@@ -224,14 +224,12 @@ export async function getStatusPageData() {
 
     // Determine status
     let status: 'green' | 'yellow' | 'red';
-    if (requests === 0) {
-      status = 'red'; // No activity
-    } else if (errorRate < 1) {
-      status = 'green'; // < 1% errors
-    } else if (errorRate <= 5) {
-      status = 'yellow'; // 1-5% errors
+    if (errors === 0) {
+      status = 'green'; // No errors
+    } else if (requests > errors) {
+      status = 'yellow'; // Errors exist but requests still get through
     } else {
-      status = 'red'; // > 5% errors
+      status = 'red'; // Only errors (or more errors than successful requests)
     }
 
     statusData.push({
