@@ -22,6 +22,19 @@ class FormService {
       }
     }
 
+    // Fix hora_registro: if it's a full timestamp, extract just the time part
+    if (payload?.hora_registro && typeof payload.hora_registro === 'string') {
+      // If it looks like a full ISO timestamp, extract just the time
+      const timeMatch = payload.hora_registro.match(/T(\d{2}:\d{2}:\d{2})/);
+      if (timeMatch) {
+        payload.hora_registro = timeMatch[1];
+      } else if (payload.hora_registro.includes('T')) {
+        // If it's a timestamp, convert to time
+        const date = new Date(payload.hora_registro);
+        payload.hora_registro = date.toTimeString().split(' ')[0];
+      }
+    }
+
     // Delegate to repository (no mutation of payload)
     return FormRepository.insert(sequelize, tenant, formKey, payload, userId);
   }

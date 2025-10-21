@@ -109,7 +109,7 @@ async function getUserForms(req: any, res: Response) {
 
     if (err.status) return res.status(err.status).json({ error: err.message });
     console.error('[AdminGetUserForms] Error:', err);
-    return res.status(500).json({ error: 'Server error getting user forms' });
+    return res.status(500).json({ error: 'Error del servidor al obtener formularios del usuario' });
   }
 }
 
@@ -149,7 +149,7 @@ export async function getUserByEmail(req: any, res: Response) {
     span?.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
     span?.recordException(err);
     console.error('[AdminGetUserByEmail] Error:', err);
-    return res.status(500).json({ error: 'Server error getting user activity' });
+    return res.status(500).json({ error: 'Error del servidor al obtener actividad del usuario' });
   }
 }
 
@@ -169,7 +169,7 @@ async function createUserAdmin(req: any, res: Response) {
 
     if (!username || !password) {
       span?.addEvent('Validation failed: missing username or password');
-      return res.status(400).json({ error: 'Username and password are required' });
+      return res.status(400).json({ error: 'Nombre de usuario y contraseña son requeridos' });
     }
 
     const newUser = await UserService.registerUser(sequelize, username, password, user_email);
@@ -177,7 +177,7 @@ async function createUserAdmin(req: any, res: Response) {
     span?.setAttribute('created.user.id', newUser.id);
     span?.addEvent('User created by admin');
 
-    return res.status(201).json({ message: 'User created successfully', tenant, user: newUser });
+    return res.status(201).json({ message: 'Usuario creado exitosamente', tenant, user: newUser });
   } catch (err: any) {
     span?.setStatus({ code: SpanStatusCode.ERROR, message: err.message });
     span?.recordException(err);
@@ -187,7 +187,7 @@ async function createUserAdmin(req: any, res: Response) {
     }
 
     console.error('[AdminCreateUser] Error:', err);
-    return res.status(500).json({ error: 'Server error creating user' });
+    return res.status(500).json({ error: 'Error del servidor al crear usuario' });
   }
 }
 
@@ -223,7 +223,7 @@ async function getTopUsersByFormType(req: any, res: Response) {
 
     span?.addEvent('Error obteniendo usuarios top por tipo de formulario para admin');
     console.error("[AdminGetTopUsersByFormType] Error:", err);
-    return res.status(500).json({ error: "Server error getting top users by form type" });
+    return res.status(500).json({ error: "Error del servidor al obtener usuarios principales por tipo de formulario" });
   }
 }
 
@@ -245,7 +245,7 @@ async function deleteUserById(req: any, res: Response) {
     // Validar que el userId es un número válido
     if (isNaN(userId)) {
       span?.addEvent('Error: ID de usuario inválido');
-      return res.status(400).json({ error: "Invalid user ID" });
+      return res.status(400).json({ error: "ID de usuario inválido" });
     }
 
     // Buscar el usuario antes de eliminarlo para verificar que existe
@@ -254,7 +254,7 @@ async function deleteUserById(req: any, res: Response) {
 
     if (!existingUser) {
       span?.addEvent('Usuario no encontrado');
-      return res.status(404).json({ error: "User not found" });
+      return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
     // Eliminar el usuario
@@ -264,13 +264,13 @@ async function deleteUserById(req: any, res: Response) {
 
     if (deletedCount === 0) {
       span?.addEvent('No se pudo eliminar el usuario');
-      return res.status(404).json({ error: "User not found" });
+      return res.status(404).json({ error: "Usuario no encontrado" });
     }
 
     span?.addEvent('Usuario eliminado exitosamente');
 
     return res.status(200).json({
-      message: "User deleted successfully",
+      message: "Usuario eliminado exitosamente",
       userId: userId,
       tenant: tenant
     });
@@ -281,7 +281,7 @@ async function deleteUserById(req: any, res: Response) {
 
     span?.addEvent('Error eliminando usuario por ID');
     console.error("[AdminDeleteUserById] Error:", err);
-    return res.status(500).json({ error: "Server error deleting user" });
+    return res.status(500).json({ error: "Error del servidor al eliminar usuario" });
   }
 }
 
@@ -314,7 +314,7 @@ async function getTenantErrors(req: any, res: Response) {
 
     span?.addEvent('Error obteniendo errores por tenant para admin');
     console.error("[AdminGetTenantErrors] Error:", err);
-    return res.status(500).json({ error: "Server error getting tenant errors" });
+    return res.status(500).json({ error: "Error del servidor al obtener errores de tenant" });
   }
 }
 
@@ -346,7 +346,7 @@ async function getStatusPageData(req: any, res: Response) {
 
     span?.addEvent('Error obteniendo datos de página de estado para admin');
     console.error("[AdminGetStatusPageData] Error:", err);
-    return res.status(500).json({ error: "Server error getting status page data" });
+    return res.status(500).json({ error: "Error del servidor al obtener datos de página de estado" });
   }
 }
 
