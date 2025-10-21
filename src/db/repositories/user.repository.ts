@@ -1,5 +1,6 @@
 // Importamos bcrypt para verificar contraseñas
 import bcrypt from "bcryptjs";
+import { instrumentOperation } from '../../telemetry/operation-tracer';
 
 // Clase UserRepository para manejar operaciones de base de datos para usuarios
 export default class UserRepository {
@@ -111,64 +112,77 @@ export default class UserRepository {
 
   // Método para obtener el usuario con más formularios de cada tipo
   static async getTopUsersByFormType(sequelize: any, tenant: string) {
-    const results: any[] = [];
+    return instrumentOperation('repository_get_top_users_by_form_type', { tenant }, async (tracer) => {
+      const results: any[] = [];
 
-    if (tenant === 'agromo') {
-      // Para agromo, usar los modelos de formulario registrados
-      for (let i = 1; i <= 7; i++) {
-        const modelName = `AGROMO_FORM_${i}`;
-        const FormModel = sequelize.models[modelName];
+      if (tenant === 'agromo') {
+        // Para agromo, usar los modelos de formulario registrados
+        for (let i = 1; i <= 7; i++) {
+          const modelName = `AGROMO_FORM_${i}`;
+          const FormModel = sequelize.models[modelName];
 
-        if (FormModel) {
-          const result = await sequelize.query(`
-            SELECT u.id, u.username, u.user_email, COUNT(f.id) as count
-            FROM users u
-            INNER JOIN formulario${i} f ON u.id = f.id_usuario
-            GROUP BY u.id, u.username, u.user_email
-            ORDER BY count DESC
-            LIMIT 1
-          `, { type: sequelize.QueryTypes.SELECT });
+          if (FormModel) {
+            // Record individual database query for each form type
+            const queryTimer = tracer.recordDbQuery(`formulario${i}`, 'select_analytics', tenant);
 
-          if (result.length > 0) {
-            results.push({
-              form_type: `agromo_form_${i}`,
-              user_id: result[0].id,
-              username: result[0].username,
-              user_email: result[0].user_email,
-              count: parseInt(result[0].count)
-            });
+            const result = await sequelize.query(`
+              SELECT u.id, u.username, u.user_email, COUNT(f.id) as count
+              FROM users u
+              INNER JOIN formulario${i} f ON u.id = f.id_usuario
+              GROUP BY u.id, u.username, u.user_email
+              ORDER BY count DESC
+              LIMIT 1
+            `, { type: sequelize.QueryTypes.SELECT });
+
+            queryTimer.end();
+
+            if (result.length > 0) {
+              results.push({
+                form_type: `agromo_form_${i}`,
+                user_id: result[0].id,
+                username: result[0].username,
+                user_email: result[0].user_email,
+                count: parseInt(result[0].count)
+              });
+            }
+          }
+        }
+      } else if (tenant === 'biomo' || tenant === 'robo') {
+        // Para biomo/robo, usar los modelos de formulario registrados
+        for (let i = 1; i <= 7; i++) {
+          const modelName = `${tenant.toUpperCase()}_FORM_${i}`;
+          const FormModel = sequelize.models[modelName];
+
+          if (FormModel) {
+            // Record individual database query for each form type
+            const queryTimer = tracer.recordDbQuery(`formulario${i}`, 'select_analytics', tenant);
+
+            const result = await sequelize.query(`
+              SELECT u.id, u.username, u.user_email, COUNT(f.id) as count
+              FROM users u
+              INNER JOIN formulario${i} f ON u.id = f.id_usuario
+              GROUP BY u.id, u.username, u.user_email
+              ORDER BY count DESC
+              LIMIT 1
+            `, { type: sequelize.QueryTypes.SELECT });
+
+            queryTimer.end();
+
+            if (result.length > 0) {
+              results.push({
+                form_type: `${tenant}_form_${i}`,
+                user_id: result[0].id,
+                username: result[0].username,
+                user_email: result[0].user_email,
+                count: parseInt(result[0].count)
+              });
+            }
           }
         }
       }
-    } else if (tenant === 'biomo' || tenant === 'robo') {
-      // Para biomo/robo, usar los modelos de formulario registrados
-      for (let i = 1; i <= 7; i++) {
-        const modelName = `${tenant.toUpperCase()}_FORM_${i}`;
-        const FormModel = sequelize.models[modelName];
 
-        if (FormModel) {
-          const result = await sequelize.query(`
-            SELECT u.id, u.username, u.user_email, COUNT(f.id) as count
-            FROM users u
-            INNER JOIN formulario${i} f ON u.id = f.id_usuario
-            GROUP BY u.id, u.username, u.user_email
-            ORDER BY count DESC
-            LIMIT 1
-          `, { type: sequelize.QueryTypes.SELECT });
-
-          if (result.length > 0) {
-            results.push({
-              form_type: `${tenant}_form_${i}`,
-              user_id: result[0].id,
-              username: result[0].username,
-              user_email: result[0].user_email,
-              count: parseInt(result[0].count)
-            });
-          }
-        }
-      }
-    }
-
-    return results;
+      tracer.setProcessHealth('user_repository_analytics', true);
+      return results;
+    });
   }
 }

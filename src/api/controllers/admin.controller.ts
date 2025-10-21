@@ -3,6 +3,7 @@ import { Request, Response } from 'express';
 import { trace, SpanStatusCode } from '@opentelemetry/api';
 import UserService from '../../services/user.service';
 import FormService from '../../services/form.service';
+import { OperationTracer, instrumentOperation } from '../../telemetry/operation-tracer';
 
 // Helper function for detailed admin error logging and response
 function handleAdminError(
@@ -63,33 +64,42 @@ function handleAdminError(
 
 // Función para obtener todos los usuarios de un tenant (solo para usuarios backend)
 async function getAllUsers(req: any, res: Response) {
-  const span = trace.getActiveSpan();
-  span?.setAttribute('operation', 'admin.getAllUsers');
-  span?.setAttribute('tenant', req.tenant);
-  span?.setAttribute('admin.user', req.user?.username);
+  return instrumentOperation('admin_get_all_users', {
+    tenant: req.tenant,
+    admin_user: req.user?.username,
+    admin_user_id: req.user?.id
+  }, async (tracer) => {
+    const span = trace.getActiveSpan();
+    span?.setAttribute('operation', 'admin.getAllUsers');
+    span?.setAttribute('tenant', req.tenant);
+    span?.setAttribute('admin.user', req.user?.username);
 
-  const sequelize = req.sequelize;
-  const tenant = req.tenant as string;
+    const sequelize = req.sequelize;
+    const tenant = req.tenant as string;
 
-  try {
-    span?.addEvent('Obteniendo lista completa de usuarios para admin');
-
-    // Llamamos al servicio para obtener todos los usuarios con información completa
+    // Record database query
+    const dbTimer = tracer.recordDbQuery('users', 'select', tenant, req.user?.id?.toString());
     const users = await UserService.getAllUsers(sequelize);
+    dbTimer.end();
 
     span?.setAttribute('users.count', users.length);
     span?.addEvent('Lista completa de usuarios obtenida exitosamente');
 
-    // Respondemos con los usuarios
-    return res.status(200).json({
+    // Record API endpoint performance
+    const apiTimer = tracer.recordApiEndpoint('GET', tenant, 200, req.user?.id?.toString());
+    const result = res.status(200).json({
       message: users.length === 0 ? 'No se encontraron usuarios en este tenant' : 'Usuarios obtenidos exitosamente',
       tenant,
       data: users,
       count: users.length
     });
-  } catch (err: any) {
-    return handleAdminError(err, span, 'getAllUsers', req, res);
-  }
+    apiTimer.end();
+
+    tracer.setProcessHealth('admin_users_api', true);
+    return result;
+  }).catch((err) => {
+    return handleAdminError(err, trace.getActiveSpan(), 'getAllUsers', req, res);
+  });
 }
 
 // Función para obtener todos los usuarios con conteo de formularios (solo para usuarios backend)
@@ -228,33 +238,47 @@ async function createUserAdmin(req: any, res: Response) {
 
 // Función para obtener el usuario con más formularios de cada tipo (solo para usuarios backend)
 async function getTopUsersByFormType(req: any, res: Response) {
-  const span = trace.getActiveSpan();
-  span?.setAttribute('operation', 'admin.getTopUsersByFormType');
-  span?.setAttribute('tenant', req.tenant);
-  span?.setAttribute('admin.user', req.user?.username);
+  return instrumentOperation('admin_get_top_users_by_form_type', {
+    tenant: req.tenant,
+    admin_user: req.user?.username,
+    admin_user_id: req.user?.id
+  }, async (tracer) => {
+    const span = trace.getActiveSpan();
+    span?.setAttribute('operation', 'admin.getTopUsersByFormType');
+    span?.setAttribute('tenant', req.tenant);
+    span?.setAttribute('admin.user', req.user?.username);
 
-  const sequelize = req.sequelize;
-  const tenant = req.tenant as string;
+    const sequelize = req.sequelize;
+    const tenant = req.tenant as string;
 
-  try {
-    span?.addEvent('Obteniendo usuarios con más formularios por tipo para admin');
+    // Record business logic operation
+    const logicTimer = tracer.recordBusinessLogic('form_analytics', tenant, req.user?.id?.toString());
 
-    // Llamamos al servicio para obtener los usuarios top por tipo de formulario
+    // Record database queries for each form type
+    const dbTimer = tracer.recordDbTransaction(tenant, 'select_analytics', req.user?.id?.toString());
     const topUsers = await UserService.getTopUsersByFormType(sequelize, tenant);
+    dbTimer.end();
+
+    logicTimer.end();
 
     span?.setAttribute('form_types.count', topUsers.length);
     span?.addEvent('Usuarios top por tipo de formulario obtenidos exitosamente');
 
-    // Respondemos con los resultados
-    return res.status(200).json({
+    // Record API endpoint performance
+    const apiTimer = tracer.recordApiEndpoint('GET', tenant, 200, req.user?.id?.toString());
+    const result = res.status(200).json({
       message: topUsers.length === 0 ? 'No se encontraron formularios en este tenant' : 'Usuarios top por tipo de formulario obtenidos exitosamente',
       tenant,
       data: topUsers,
       count: topUsers.length
     });
-  } catch (err: any) {
-    return handleAdminError(err, span, 'getTopUsersByFormType', req, res);
-  }
+    apiTimer.end();
+
+    tracer.setProcessHealth('admin_analytics_api', true);
+    return result;
+  }).catch((err) => {
+    return handleAdminError(err, trace.getActiveSpan(), 'getTopUsersByFormType', req, res);
+  });
 }
 
 // Función para eliminar un usuario por ID (solo para usuarios backend)
@@ -340,29 +364,42 @@ async function getTenantErrors(req: any, res: Response) {
 
 // Función para obtener datos de página de estado (solo para usuarios backend)
 async function getStatusPageData(req: any, res: Response) {
-  const span = trace.getActiveSpan();
-  span?.setAttribute('operation', 'admin.getStatusPageData');
-  span?.setAttribute('admin.user', req.user?.username);
+  return instrumentOperation('admin_get_status_page_data', {
+    admin_user: req.user?.username,
+    admin_user_id: req.user?.id
+  }, async (tracer) => {
+    const span = trace.getActiveSpan();
+    span?.setAttribute('operation', 'admin.getStatusPageData');
+    span?.setAttribute('admin.user', req.user?.username);
 
-  try {
-    span?.addEvent('Obteniendo datos de página de estado para admin');
-
-    // Llamamos al servicio para obtener los datos de estado
+    // Record external service call to Prometheus
+    const prometheusTimer = tracer.recordExternalService('prometheus', 'GET', '/api/v1/query_range');
     const statusData = await UserService.getStatusPageData();
+    prometheusTimer.end(200);
 
     span?.setAttribute('status.hours', statusData.data.length);
     span?.addEvent('Datos de página de estado obtenidos exitosamente');
 
-    // Respondemos con los resultados
-    return res.status(200).json({
+    // Record business logic for status calculation
+    const logicTimer = tracer.recordBusinessLogic('status_analytics', 'system', req.user?.id?.toString());
+    // Status calculation logic would be here if needed
+    logicTimer.end();
+
+    // Record API endpoint performance
+    const apiTimer = tracer.recordApiEndpoint('GET', 'system', 200, req.user?.id?.toString());
+    const result = res.status(200).json({
       success: true,
       message: 'Datos de página de estado obtenidos exitosamente',
       data: statusData,
       timestamp: new Date().toISOString()
     });
-  } catch (err: any) {
-    return handleAdminError(err, span, 'getStatusPageData', req, res);
-  }
+    apiTimer.end();
+
+    tracer.setProcessHealth('admin_monitoring_api', true);
+    return result;
+  }).catch((err) => {
+    return handleAdminError(err, trace.getActiveSpan(), 'getStatusPageData', req, res);
+  });
 }
 
 // Eliminar usuario (solo backend)

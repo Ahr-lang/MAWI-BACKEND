@@ -3,6 +3,7 @@ import bcrypt from "bcryptjs";
 // Importamos el repositorio de usuarios
 import UserRepository from "../db/repositories/user.repository";
 import { trace } from '@opentelemetry/api';
+import { instrumentOperation } from '../telemetry/operation-tracer';
 
 // Clase UserService para lógica de negocio de usuarios
 export default class UserService {
@@ -162,26 +163,30 @@ export default class UserService {
 
   // Método para obtener el usuario con más formularios de cada tipo
   static async getTopUsersByFormType(sequelize: any, tenant: string) {
-    const tracer = trace.getTracer('user-service');
-    const span = tracer.startSpan('getTopUsersByFormType');
-    span.setAttribute('operation', 'user.getTopUsersByFormType');
-    span.setAttribute('tenant', tenant);
+    return instrumentOperation('service_get_top_users_by_form_type', { tenant }, async (tracer) => {
+      const tracer_legacy = trace.getTracer('user-service');
+      const span = tracer_legacy.startSpan('getTopUsersByFormType');
+      span.setAttribute('operation', 'user.getTopUsersByFormType');
+      span.setAttribute('tenant', tenant);
 
-    try {
-      span.addEvent('Fetching top users by form type');
+      // Record database transaction for analytics query
+      const dbTimer = tracer.recordDbTransaction(tenant, 'select_analytics');
 
       const topUsers = await UserRepository.getTopUsersByFormType(sequelize, tenant);
+
+      dbTimer.end();
 
       span.setAttribute('form_types.count', topUsers.length);
       span.addEvent('Top users by form type fetched successfully');
 
       span.end();
+
+      tracer.setProcessHealth('user_analytics_service', true);
       return topUsers;
-    } catch (err: any) {
-      span.recordException(err);
-      span.end();
+    }).catch((err) => {
+      // Error handling is done by the instrumentOperation wrapper
       throw err;
-    }
+    });
   }
 
   // Método para obtener errores por tenant
