@@ -3,8 +3,6 @@ import {
   createSubmission,
   getUserForms,
   getFormById,
-  updateForm,
-  deleteForm,
   getAllUserForms
 } from '../controllers/form.controller';
 import { protectAuth } from "../middlewares/protect";
@@ -23,11 +21,5 @@ router.get("/:tenant/forms", ...protectAuth, getAllUserForms);
 
 // Get specific form by ID
 router.get("/:tenant/forms/:formKey/:formId", ...protectAuth, getFormById);
-
-// Update specific form
-router.put("/:tenant/forms/:formKey/:formId", ...protectAuth, updateForm);
-
-// Delete specific form
-router.delete("/:tenant/forms/:formKey/:formId", ...protectAuth, deleteForm);
 
 export default router;
