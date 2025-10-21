@@ -125,16 +125,22 @@ passport.use(
       span.addEvent('Determining Sequelize instance');
 
       // Determinar la instancia de Sequelize usada para validar el usuario.
-      // Si el token pertenece al tenant 'back' (usuario admin) lo validamos contra la DB de 'back'.
-      // En solicitudes normales usamos el sequelize ya adjuntado al request.
+      // Para usuarios admin del tenant 'back', SIEMPRE validar contra la DB de 'back'
+      // Para usuarios normales, usar el sequelize del request (que ya apunta al tenant correcto)
       let sequelize: any = req.sequelize;
+      if (isAdminRoute && isBackTenantUser) {
+        // Para admin routes con usuarios back, validar usuario contra DB de back
+        sequelize = getSequelize('back');
+        console.debug('[JWT] using back tenant sequelize for admin user validation');
+      } else {
+        console.debug('[JWT] using sequelize for tenant:', req.params?.tenant);
+      }
 
       span.addEvent('Finding user by ID');
 
-  // Buscamos al usuario por ID en la instancia correspondiente
-  console.debug('[JWT] using sequelize for tenant:', req.params?.tenant);
-  const user = await UserRepository.findById(sequelize, payload.id);
-  console.debug('[JWT] found user:', user);
+      // Buscamos al usuario por ID en la instancia correspondiente
+      const user = await UserRepository.findById(sequelize, payload.id);
+      console.debug('[JWT] found user:', user);
       if (!user) {
         span.addEvent('User not found');
         span.end();

@@ -56,9 +56,6 @@ export const formsPerTenant = new Gauge({
 export function initializeMetrics() {
   collectDefaultMetrics();
 
-  // Initialize at least one label value so Prometheus sees the series
-  onlineUsers.labels('default').set(0);
-
   // Initialize forms_per_tenant_total so it shows up right away
   ['agromo','biomo','robo'].forEach(t =>
     ['form_1','form_2','form_3','form_4','form_5','form_6','form_7'].forEach(f =>
