@@ -21,9 +21,12 @@ services:
       - SWAGGER_SERVER_URL=${SWAGGER_SERVER_URL}
       - OTEL_EXPORTER_OTLP_TRACES_ENDPOINT=http://otel-collector:4318/v1/traces
       - OTEL_EXPORTER_OTLP_METRICS_ENDPOINT=http://otel-collector:4318/v1/metrics
-      - PROMETHEUS_URL=http://localhost:9090
+      - PROMETHEUS_URL=http://prometheus:9090
     expose:
       - "3000"       # only expose internally, don't bind 80/443
+    depends_on:
+      - prometheus
+      - otel-collector
     restart: unless-stopped
  
   prometheus:
