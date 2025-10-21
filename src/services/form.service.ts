@@ -2,29 +2,28 @@ import { trace } from '@opentelemetry/api';
 import FormRepository from '../db/repositories/form.repository';
 
 class FormService {
-  async createSubmission(sequelize: any, tenant: string, formKey: string, payload: any, userId?: number) {
+  async createSubmission(
+    sequelize: any,
+    tenant: string,
+    formKey: string,
+    payload: any,
+    userId?: number
+  ) {
     const span = trace.getActiveSpan();
     span?.setAttribute('app.tenant', tenant);
     span?.setAttribute('app.form.key', formKey);
     if (userId) span?.setAttribute('app.user.id', userId);
 
-    // Process image if present
-    if (payload.imageUrl) {
-      span?.setAttribute("app.image.present", true);
-      console.log("[FormService] Processing image URL:", payload.imageUrl);
-      
-      // Validate image URL format
-      if (!payload.imageUrl.startsWith('http')) {
-        console.error("[FormService] Invalid image URL format:", payload.imageUrl);
-        throw new Error('Invalid image URL format');
+    // Optional: basic validation for the image URL you already place in payload.image_url
+    if (payload?.image_url) {
+      span?.setAttribute('app.image.present', true);
+      if (typeof payload.image_url !== 'string' || !/^https?:\/\//i.test(payload.image_url)) {
+        throw Object.assign(new Error('Invalid image_url format'), { status: 400 });
       }
-      
-      // Add image processing timestamp
-      payload.imageProcessedAt = new Date().toISOString();
-      console.log("[FormService] Image processed at:", payload.imageProcessedAt);
     }
 
-    return await FormRepository.insert(sequelize, tenant, formKey, payload, userId);
+    // Delegate to repository (no mutation of payload)
+    return FormRepository.insert(sequelize, tenant, formKey, payload, userId);
   }
 
   async getUserForms(sequelize: any, tenant: string, formKey: string, userId: number) {

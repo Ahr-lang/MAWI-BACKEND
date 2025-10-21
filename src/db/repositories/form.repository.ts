@@ -9,43 +9,30 @@ class FormRepository {
     data: any,
     userId?: number
   ) {
+    // Ensure user id (controller already sets it, but keep as safety)
     if (userId && !data.id_usuario) data.id_usuario = userId;
 
+    // Resolve model
     const modelName = resolveModelName(tenant, formKey);
     const Model = sequelize.models[modelName];
     if (!Model) {
-      throw Object.assign(new Error(`Model '${modelName}' not found for tenant '${tenant}'`), { status: 500 });
+      throw Object.assign(
+        new Error(`Model '${modelName}' not found for tenant '${tenant}'`),
+        { status: 500 }
+      );
     }
 
-    // Extract image data before inserting the main form
-    const { imageUrl, imageMetadata, ...formData } = data;
-
-    const created = await Model.create(formData);
+    // At this point `data` already includes image_url (from controller), so just create
+    const created = await Model.create(data);
     const json = created.toJSON();
-    const id = json.id ?? json.id_formulario ?? json.id_condicion ?? json.id_detalle ?? json.id_foto ?? json.id_chat ?? null;
 
-    // Handle image storage for biomo tenant
-    if (tenant === 'biomo' && imageUrl) {
-      try {
-        const ImageModel = sequelize.models['image'];
-        if (ImageModel) {
-          await ImageModel.create({
-            formularioId: id,
-            formularioType: modelName,
-            imageUri: imageUrl,
-            id_usuario: userId
-          });
-          console.log(`[FormRepository] Image stored for ${modelName} id ${id}`);
-        }
-      } catch (imageError) {
-        console.error('[FormRepository] Failed to store image:', imageError);
-        // Don't fail the whole operation if image storage fails
-      }
-    }
+    // Normalize id (Agromo uses 'id', but keep fallback just in case)
+    const id = json.id ?? json.id_formulario ?? null;
 
-    return { ...json, id, __tenant: tenant, __form: formKey, imageUrl, imageMetadata };
+    // Return created row + context
+    return { ...json, id, __tenant: tenant, __form: formKey };
   }
-
+  
   // Read: by user
   async getByUser(
     sequelize: any,
