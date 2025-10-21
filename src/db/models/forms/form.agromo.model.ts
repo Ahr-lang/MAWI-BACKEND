@@ -6,7 +6,7 @@ export function registerAgromoForms(sequelize: Sequelize) {
     id:                { type: DataTypes.BIGINT, primaryKey: true, allowNull: false, autoIncrement: true },
     id_usuario:        { type: DataTypes.INTEGER, allowNull: true },
     cultivo:           { type: DataTypes.STRING(100), allowNull: false },
-    fecha_siembra:     { type: DataTypes.DATEONLY, allowNull: false },
+    fecha_siembra:     { type: DataTypes.STRING(100), allowNull: false },  // ← changed from DATEONLY → STRING
     humedad:           { type: DataTypes.INTEGER, allowNull: true },
     metodo_humedad:    { type: DataTypes.STRING(100), allowNull: true },
     ph:                { type: DataTypes.INTEGER, allowNull: true },
@@ -18,8 +18,6 @@ export function registerAgromoForms(sequelize: Sequelize) {
     color_follaje:     { type: DataTypes.STRING(100), allowNull: true },
     estado_follaje:    { type: DataTypes.STRING(100), allowNull: true },
     observaciones:     { type: DataTypes.TEXT, allowNull: true },
-    fecha_registro:    { type: DataTypes.DATEONLY, allowNull: true, defaultValue: DataTypes.NOW },
-    hora_registro:     { type: DataTypes.TIME, allowNull: true, defaultValue: DataTypes.NOW },
     estado:            { type: DataTypes.INTEGER, allowNull: true, defaultValue: 1 },
     localizacion:      { type: DataTypes.STRING(255), allowNull: true },
     image_url:         { type: DataTypes.STRING(500), allowNull: true, defaultValue: null },
