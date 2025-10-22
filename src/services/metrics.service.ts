@@ -2,6 +2,7 @@ import { Request, Response } from 'express';
 import { formsPerTenant } from '../telemetry/metrics';
 import { Sequelize } from 'sequelize';
 import { getSequelize } from '../db/index';
+import { errorTracker } from './error-tracking.service';
 
 const PROMETHEUS_URL = process.env.PROMETHEUS_URL!; // make it required
 
@@ -159,88 +160,35 @@ export async function getApplicationErrorsByTenantData() {
 }
 
 /**
- * Query Prometheus for status page data (requests and errors per hour for last 24 hours)
+ * Get status page data using the error tracking service
  */
-export async function getStatusPageData() {
-  assertPromURL();
+export async function getStatusPageData(tenant?: string) {
+  const hourlyStats = errorTracker.getHourlyStats(tenant);
 
-  // Get current time and time 24 hours ago
-  const end = Math.floor(Date.now() / 1000);
-  const start = end - (24 * 60 * 60); // 24 hours ago
-  const step = 3600; // 1 hour steps
-
-  // Query for total requests per hour
-  const requestsQuery = encodeURIComponent('sum(rate(http_requests_total[1h]))');
-  const requestsUrl = `${PROMETHEUS_URL}/api/v1/query_range?query=${requestsQuery}&start=${start}&end=${end}&step=${step}`;
-
-  // Query for error requests per hour (5xx status codes)
-  const errorsQuery = encodeURIComponent('sum(rate(http_requests_total{status=~"5.."}[1h]))');
-  const errorsUrl = `${PROMETHEUS_URL}/api/v1/query_range?query=${errorsQuery}&start=${start}&end=${end}&step=${step}`;
-
-  const [requestsResp, errorsResp] = await Promise.all([
-    fetch(requestsUrl),
-    fetch(errorsUrl)
-  ]);
-
-  if (!requestsResp.ok || !errorsResp.ok) {
-    throw new Error(`Prometheus HTTP error: requests=${requestsResp.status}, errors=${errorsResp.status}`);
-  }
-
-  const [requestsData, errorsData] = await Promise.all([
-    requestsResp.json(),
-    errorsResp.json()
-  ]);
-
-  const requestsDataTyped = requestsData as any;
-  const errorsDataTyped = errorsData as any;
-
-  if (requestsDataTyped.status !== 'success' || errorsDataTyped.status !== 'success') {
-    throw new Error(`Prometheus returned status=${requestsDataTyped.status}/${errorsDataTyped.status}`);
-  }
-
-  // Process the time series data
-  const requestsSeries = requestsDataTyped.data?.result?.[0]?.values ?? [];
-  const errorsSeries = errorsDataTyped.data?.result?.[0]?.values ?? [];
-
-  // Create hourly status data
-  const statusData = [];
-  for (let i = 0; i < 24; i++) {
-    const hourStart = start + (i * 3600);
-    const hourEnd = hourStart + 3600;
-
-    // Find data points for this hour
-    const requestPoint = requestsSeries.find(([timestamp]: [number, string]) =>
-      timestamp >= hourStart && timestamp < hourEnd
-    );
-    const errorPoint = errorsSeries.find(([timestamp]: [number, string]) =>
-      timestamp >= hourStart && timestamp < hourEnd
-    );
-
-    const requests = requestPoint ? Number(requestPoint[1]) : 0;
-    const errors = errorPoint ? Number(errorPoint[1]) : 0;
-
-    // Calculate error rate
-    const errorRate = requests > 0 ? (errors / requests) * 100 : 0;
+  const statusData = hourlyStats.map((stats, i) => {
+    const httpErrors = stats.httpErrors;
+    const estimatedRequests = Math.max(stats.totalRequests, httpErrors > 0 ? httpErrors * 2 : 0);
+    const errorRate = estimatedRequests > 0 ? (httpErrors / estimatedRequests) * 100 : 0;
 
     // Determine status
     let status: 'green' | 'yellow' | 'red';
-    if (errors === 0) {
-      status = 'green'; // No errors
-    } else if (requests > errors) {
-      status = 'yellow'; // Errors exist but requests still get through
+    if (httpErrors === 0) {
+      status = 'green';
+    } else if (errorRate < 50) {
+      status = 'yellow'; // Errors exist but system still mostly functional
     } else {
-      status = 'red'; // Only errors (or more errors than successful requests)
+      status = 'red'; // High error rate
     }
 
-    statusData.push({
+    return {
       hour: i,
-      timestamp: hourStart * 1000, // Convert to milliseconds
-      requests: Math.round(requests),
-      errors: Math.round(errors),
-      errorRate: Math.round(errorRate * 100) / 100, // Round to 2 decimal places
+      timestamp: stats.hourTimestamp,
+      requests: estimatedRequests,
+      errors: httpErrors,
+      errorRate: Math.round(errorRate * 100) / 100,
       status
-    });
-  }
+    };
+  });
 
   return {
     period: '24h',

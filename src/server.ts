@@ -17,6 +17,7 @@ import adminActivityRoutes from './api/routes/admin.activity.routes';
 import metricsRoutes from './api/routes/metrics.routes';
 import { connectDB } from './db/index';
 import { attachTraceIds, deprecatedRoute } from './api/middlewares/otelContext';
+import { trackHttpError, errorTrackingMiddleware } from './middlewares/error-tracking';
 import { MetricsUpdaterService } from './services/metrics.service';
 
 const app = express();
@@ -45,6 +46,9 @@ async function startServer() {
 
     // 🟣 Inserta el middleware de OpenTelemetry (añade traceId/spanId)
     app.use(attachTraceIds);
+
+    // 🟣 Error tracking middleware
+    app.use(trackHttpError);
 
     // 🟣 HTTP Request Metrics Middleware
     app.use((req: Request, res: Response, next: NextFunction) => {
@@ -99,6 +103,7 @@ async function startServer() {
     app.use((_req, res) => res.status(404).json({ error: 'Not found' }));
 
     /* ----------------------------- ERROR HANDLER -------------------------- */
+    app.use(errorTrackingMiddleware);
     app.use(
       (err: any, req: Request, res: Response, _next: NextFunction) => {
         const status = err?.status || 500;

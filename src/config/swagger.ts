@@ -460,6 +460,63 @@ const extraPaths = {
       }
     }
   },
+  "/api/{tenant}/admin/users/{userId}": {
+    delete: {
+      summary: "Eliminar usuario por ID (solo para usuarios backend)",
+      tags: ["Administración"],
+      description: "Endpoint administrativo que permite a usuarios del tenant 'back' eliminar un usuario específico de cualquier tenant por su ID.",
+      parameters: [
+        {
+          in: "path",
+          name: "tenant",
+          required: true,
+          schema: {
+            type: "string",
+            enum: ["agromo", "biomo", "robo", "back"]
+          },
+          description: "Identificador del tenant del usuario a eliminar"
+        },
+        {
+          in: "path",
+          name: "userId",
+          required: true,
+          schema: {
+            type: "integer",
+            minimum: 1
+          },
+          description: "ID del usuario a eliminar"
+        }
+      ],
+      security: [
+        {
+          bearerAuth: [],
+          "Tenant API Key": []
+        }
+      ],
+      responses: {
+        200: {
+          description: "Usuario eliminado exitosamente",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  message: { type: "string", example: "Usuario eliminado exitosamente" },
+                  tenant: { type: "string", example: "biomo" },
+                  deletedUserId: { type: "integer", example: 123 }
+                }
+              }
+            }
+          }
+        },
+        400: { description: "ID de usuario inválido" },
+        401: { description: "Token inválido o ausente" },
+        403: { description: "Acceso denegado - solo usuarios del tenant backend" },
+        404: { description: "Usuario no encontrado" },
+        500: { description: "Error del servidor" }
+      }
+    }
+  },
   "/api/{tenant}/admin/users/forms": {
     get: {
       summary: "Obtener usuarios con conteo de formularios (solo para usuarios backend)",
@@ -742,7 +799,7 @@ const extraPaths = {
     get: {
       summary: "Obtener errores por tenant (solo para usuarios backend)",
       tags: ["Administración"],
-      description: "Endpoint administrativo que permite a usuarios del tenant 'back' obtener métricas de errores de todos los tenants desde Prometheus, incluyendo errores HTTP 5xx y errores de aplicación.",
+      description: "Endpoint administrativo que permite a usuarios del tenant 'back' obtener información detallada de errores rastreados en las últimas 24 horas, incluyendo errores HTTP (5xx) y errores de aplicación con estadísticas completas.",
       parameters: [
         {
           in: "path",
@@ -753,6 +810,18 @@ const extraPaths = {
             enum: ["agromo", "biomo", "robo", "back"]
           },
           description: "Tenant del usuario (debe ser 'back' para acceso administrativo)"
+        },
+        {
+          in: "query",
+          name: "hours",
+          required: false,
+          schema: {
+            type: "integer",
+            minimum: 1,
+            maximum: 24,
+            default: 24
+          },
+          description: "Número de horas hacia atrás para buscar errores (máximo 24 horas)"
         }
       ],
       security: [
@@ -776,30 +845,73 @@ const extraPaths = {
                     properties: {
                       httpErrors: {
                         type: "array",
-                        description: "Errores HTTP 5xx por tenant",
+                        description: "Errores HTTP 5xx agrupados por tenant y código de estado",
                         items: {
                           type: "object",
                           properties: {
                             tenant: { type: "string", example: "agromo" },
                             status: { type: "string", example: "500" },
-                            errorRate: { type: "number", example: 0.5 }
+                            count: { type: "integer", example: 2, description: "Número total de errores de este tipo" },
+                            errorRate: { type: "number", example: 0.083, description: "Tasa de errores por hora" },
+                            recentErrors: {
+                              type: "array",
+                              description: "Últimos 5 errores de este tipo",
+                              items: {
+                                type: "object",
+                                properties: {
+                                  id: { type: "string", example: "mh1ic0xupujnsbk7n8" },
+                                  timestamp: { type: "string", format: "date-time", example: "2025-10-22T04:42:50.178Z" },
+                                  tenant: { type: "string", example: "agromo" },
+                                  operation: { type: "string", example: "GET /agromo/admin/test-error" },
+                                  errorType: { type: "string", example: "http" },
+                                  message: { type: "string", example: "HTTP 500 Error" },
+                                  statusCode: { type: "integer", example: 500 },
+                                  userId: { type: "string", example: "4" },
+                                  userAgent: { type: "string", example: "curl/8.14.1" },
+                                  ip: { type: "string", example: "172.18.0.1" },
+                                  method: { type: "string", example: "GET" },
+                                  url: { type: "string", example: "/agromo/admin/test-error" },
+                                  context: {
+                                    type: "object",
+                                    description: "Contexto adicional del error"
+                                  }
+                                }
+                              }
+                            }
                           }
                         }
                       },
                       totalErrors: {
                         type: "object",
+                        description: "Estadísticas totales de errores",
                         properties: {
-                          totalErrorRate: { type: "number", example: 2.3 }
+                          totalErrors: { type: "integer", example: 2 },
+                          totalErrorRate: { type: "number", example: 0.083, description: "Tasa total de errores por hora" },
+                          timeRange: { type: "string", example: "24 hours" },
+                          errorsByType: {
+                            type: "object",
+                            description: "Conteo de errores por tipo",
+                            additionalProperties: { type: "integer" },
+                            example: { "http": 2 }
+                          },
+                          errorsByTenant: {
+                            type: "object",
+                            description: "Conteo de errores por tenant",
+                            additionalProperties: { type: "integer" },
+                            example: { "agromo": 2 }
+                          }
                         }
                       },
                       applicationErrors: {
                         type: "array",
-                        description: "Errores de aplicación por tenant",
+                        description: "Errores de aplicación (no HTTP)",
                         items: {
                           type: "object",
                           properties: {
-                            tenant: { type: "string", example: "biomo" },
-                            applicationErrors: { type: "number", example: 1.2 }
+                            tenant: { type: "string" },
+                            operation: { type: "string" },
+                            count: { type: "integer" },
+                            errorRate: { type: "number" }
                           }
                         }
                       }
@@ -819,9 +931,9 @@ const extraPaths = {
   },
   "/api/{tenant}/admin/status": {
     get: {
-      summary: "Obtener datos de página de estado (solo para usuarios backend)",
+      summary: "Obtener página de estado del sistema (solo para usuarios backend)",
       tags: ["Administración"],
-      description: "Endpoint administrativo que proporciona datos para una página de estado mostrando actividad por hora en las últimas 24 horas con indicadores de error. Verde: Sin errores, Amarillo: Errores pero solicitudes exitosas, Rojo: Solo errores.",
+      description: "Endpoint administrativo que proporciona datos de estado del sistema por hora para las últimas 24 horas. Muestra solicitudes, errores y estado de salud (verde/amarillo/rojo) para cada hora.",
       parameters: [
         {
           in: "path",
@@ -853,22 +965,44 @@ const extraPaths = {
                   data: {
                     type: "object",
                     properties: {
-                      period: { type: "string", example: "24h" },
+                      period: { type: "string", example: "24h", description: "Periodo de tiempo cubierto" },
                       data: {
                         type: "array",
-                        description: "Datos por hora para las últimas 24 horas",
+                        description: "Datos por hora para las últimas 24 horas (hora 0 = hora actual)",
                         items: {
                           type: "object",
                           properties: {
-                            hour: { type: "integer", example: 14 },
-                            timestamp: { type: "number", example: 1729363200000 },
-                            requests: { type: "integer", example: 1250 },
-                            errors: { type: "integer", example: 12 },
-                            errorRate: { type: "number", example: 0.96 },
+                            hour: { 
+                              type: "integer", 
+                              example: 0, 
+                              description: "Índice de hora (0=hora actual, 23=hace 23 horas)" 
+                            },
+                            timestamp: { 
+                              type: "integer", 
+                              format: "int64",
+                              example: 1761109200000, 
+                              description: "Timestamp del inicio de la hora en milisegundos" 
+                            },
+                            requests: { 
+                              type: "integer", 
+                              example: 4, 
+                              description: "Número estimado de solicitudes en esta hora" 
+                            },
+                            errors: { 
+                              type: "integer", 
+                              example: 2, 
+                              description: "Número de errores HTTP (5xx) en esta hora" 
+                            },
+                            errorRate: { 
+                              type: "number", 
+                              example: 50, 
+                              description: "Porcentaje de tasa de error (0-100)" 
+                            },
                             status: {
                               type: "string",
                               enum: ["green", "yellow", "red"],
-                              example: "green"
+                              example: "red",
+                              description: "Estado de salud del sistema: green=sin errores, yellow=errores <50%, red=errores >=50%"
                             }
                           }
                         }
@@ -884,6 +1018,59 @@ const extraPaths = {
         401: { description: "Token inválido o ausente" },
         403: { description: "Acceso denegado - solo usuarios del tenant backend" },
         500: { description: "Error del servidor" }
+      }
+    }
+  },
+  "/api/{tenant}/admin/test-error": {
+    get: {
+      summary: "Probar sistema de rastreo de errores (solo desarrollo)",
+      tags: ["Administración"],
+      description: "Endpoint de prueba que genera intencionalmente un error HTTP 500 para verificar que el sistema de rastreo de errores funciona correctamente. El error aparecerá en /admin/errors y /admin/status.",
+      parameters: [
+        {
+          in: "path",
+          name: "tenant",
+          required: true,
+          schema: {
+            type: "string",
+            enum: ["agromo", "biomo", "robo", "back"]
+          },
+          description: "Tenant del usuario (debe ser 'back' para acceso administrativo)"
+        }
+      ],
+      security: [
+        {
+          bearerAuth: [],
+          "Tenant API Key": []
+        }
+      ],
+      responses: {
+        500: {
+          description: "Error intencional generado correctamente (comportamiento esperado)",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  error: { type: "string", example: "Server error" },
+                  operation: { type: "string", example: "testErrorTracking" },
+                  details: {
+                    type: "object",
+                    properties: {
+                      message: { 
+                        type: "string", 
+                        example: "Test error for error tracking system - this is intentional" 
+                      },
+                      timestamp: { type: "string", format: "date-time" }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+        401: { description: "Token inválido o ausente" },
+        403: { description: "Acceso denegado - solo usuarios del tenant backend" }
       }
     }
   }

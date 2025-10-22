@@ -4,6 +4,7 @@ import bcrypt from "bcryptjs";
 import UserRepository from "../db/repositories/user.repository";
 import { trace } from '@opentelemetry/api';
 import { instrumentOperation } from '../telemetry/operation-tracer';
+import { errorTracker } from './error-tracking.service';
 
 // Clase UserService para lógica de negocio de usuarios
 export default class UserService {
@@ -190,22 +191,18 @@ export default class UserService {
   }
 
   // Método para obtener errores por tenant
-  static async getTenantErrors() {
+  static async getTenantErrors(hours: number = 24): Promise<any> {
     const tracer = trace.getTracer('user-service');
     const span = tracer.startSpan('getTenantErrors');
     span.setAttribute('operation', 'user.getTenantErrors');
 
     try {
-      span.addEvent('Fetching tenant errors from Prometheus');
-
-      const { getErrorsByTenantData, getTotalErrorsData, getApplicationErrorsByTenantData } = await import('../services/metrics.service');
+      span.addEvent('Fetching tenant errors from error tracking service');
 
       // Get different types of error data
-      const [httpErrors, totalErrors, appErrors] = await Promise.all([
-        getErrorsByTenantData(),
-        getTotalErrorsData(),
-        getApplicationErrorsByTenantData()
-      ]);
+      const httpErrors = errorTracker.getHttpErrors(hours);
+      const totalErrors = errorTracker.getTotalErrorStats(hours);
+      const appErrors = errorTracker.getApplicationErrors(hours);
 
       const result = {
         httpErrors,
@@ -227,7 +224,7 @@ export default class UserService {
   }
 
   // Método para obtener datos de página de estado
-  static async getStatusPageData() {
+  static async getStatusPageData(tenant?: string) {
     const tracer = trace.getTracer('user-service');
     const span = tracer.startSpan('getStatusPageData');
     span.setAttribute('operation', 'user.getStatusPageData');
@@ -237,7 +234,7 @@ export default class UserService {
 
       const { getStatusPageData } = await import('../services/metrics.service');
 
-      const statusData = await getStatusPageData();
+      const statusData = await getStatusPageData(tenant);
 
       span.setAttribute('status.hours', statusData.data.length);
       span.addEvent('Status page data fetched successfully');

@@ -167,7 +167,7 @@ async function getUserForms(req: any, res: Response) {
 }
 
 // Exportamos las funciones
-export { getAllUsers, getUsersWithForms, getUserForms, createUserAdmin, getTopUsersByFormType, getTenantErrors, deleteUserAdmin, getStatusPageData, deleteUserById };
+export { getAllUsers, getUsersWithForms, getUserForms, createUserAdmin, getTopUsersByFormType, getTenantErrors, deleteUserAdmin, getStatusPageData, deleteUserById, testErrorTracking };
 
 // Obtener usuario por email/identifier y sus formularios (admin)
 export async function getUserByEmail(req: any, res: Response) {
@@ -343,8 +343,12 @@ async function getTenantErrors(req: any, res: Response) {
   try {
     span?.addEvent('Obteniendo errores por tenant para admin');
 
+    // Get time filter from query parameters (default 24 hours, max 24 hours)
+    const hours = Math.min(parseInt(req.query.hours as string) || 24, 24);
+    span?.setAttribute('errors.hours_filter', hours);
+
     // Llamamos al servicio para obtener los errores
-    const errors = await UserService.getTenantErrors();
+    const errors = await UserService.getTenantErrors(hours);
 
     span?.setAttribute('errors.http.count', errors.httpErrors?.length || 0);
     span?.setAttribute('errors.app.count', errors.applicationErrors?.length || 0);
@@ -362,6 +366,27 @@ async function getTenantErrors(req: any, res: Response) {
   }
 }
 
+// Función para probar el sistema de tracking de errores (solo para desarrollo)
+async function testErrorTracking(req: any, res: Response) {
+  const span = trace.getActiveSpan();
+  span?.setAttribute('operation', 'admin.testErrorTracking');
+  span?.setAttribute('admin.user', req.user?.username);
+
+  try {
+    span?.addEvent('Probando sistema de tracking de errores');
+
+    // Forzar un error para probar el tracking
+    throw new Error('Test error for error tracking system - this is intentional');
+
+  } catch (err: any) {
+    // El error será automáticamente trackeado por el middleware de error tracking
+    return handleAdminError(err, span, 'testErrorTracking', req, res, {
+      test: true,
+      intentional: true
+    });
+  }
+}
+
 // Función para obtener datos de página de estado (solo para usuarios backend)
 async function getStatusPageData(req: any, res: Response) {
   return instrumentOperation('admin_get_status_page_data', {
@@ -374,7 +399,7 @@ async function getStatusPageData(req: any, res: Response) {
 
     // Record external service call to Prometheus
     const prometheusTimer = tracer.recordExternalService('prometheus', 'GET', '/api/v1/query_range');
-    const statusData = await UserService.getStatusPageData();
+    const statusData = await UserService.getStatusPageData(req.tenant);
     prometheusTimer.end(200);
 
     span?.setAttribute('status.hours', statusData.data.length);
