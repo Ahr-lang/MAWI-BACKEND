@@ -1073,6 +1073,124 @@ const extraPaths = {
         403: { description: "Acceso denegado - solo usuarios del tenant backend" }
       }
     }
+  },
+  "/api/{tenant}/admin/server-time": {
+    get: {
+      summary: "Obtener hora actual del servidor (solo para usuarios backend)",
+      tags: ["Administración"],
+      description: "Endpoint administrativo que devuelve la hora actual del servidor en múltiples formatos para sincronización con aplicaciones cliente. Útil para mostrar la hora correcta del servidor en la aplicación.",
+      parameters: [
+        {
+          in: "path",
+          name: "tenant",
+          required: true,
+          schema: {
+            type: "string",
+            enum: ["agromo", "biomo", "robo", "back"]
+          },
+          description: "Tenant del usuario (debe ser 'back' para acceso administrativo)"
+        }
+      ],
+      security: [
+        {
+          bearerAuth: [],
+          "Tenant API Key": []
+        }
+      ],
+      responses: {
+        200: {
+          description: "Hora del servidor obtenida exitosamente",
+          content: {
+            "application/json": {
+              schema: {
+                type: "object",
+                properties: {
+                  success: { type: "boolean", example: true },
+                  message: { type: "string", example: "Hora del servidor obtenida exitosamente" },
+                  data: {
+                    type: "object",
+                    properties: {
+                      timestamp: { 
+                        type: "integer", 
+                        format: "int64",
+                        example: 1729536000000, 
+                        description: "Unix timestamp en milisegundos" 
+                      },
+                      iso: { 
+                        type: "string", 
+                        format: "date-time",
+                        example: "2025-10-21T15:30:45.123Z", 
+                        description: "Fecha y hora en formato ISO 8601" 
+                      },
+                      timezone: { 
+                        type: "string", 
+                        example: "America/Mexico_City", 
+                        description: "Zona horaria del servidor" 
+                      },
+                      offset: { 
+                        type: "integer", 
+                        example: -360, 
+                        description: "Offset en minutos desde UTC (negativo para zonas al oeste)" 
+                      },
+                      formatted: {
+                        type: "object",
+                        description: "Formatos localizados (español/México)",
+                        properties: {
+                          date: { 
+                            type: "string", 
+                            example: "21/10/2025", 
+                            description: "Fecha en formato DD/MM/YYYY" 
+                          },
+                          time: { 
+                            type: "string", 
+                            example: "15:30:45", 
+                            description: "Hora en formato 24h HH:MM:SS" 
+                          },
+                          full: { 
+                            type: "string", 
+                            example: "21/10/2025, 15:30:45", 
+                            description: "Fecha y hora completa formateada" 
+                          }
+                        }
+                      }
+                    }
+                  },
+                  timestamp: { 
+                    type: "string", 
+                    format: "date-time",
+                    description: "Timestamp de la respuesta" 
+                  }
+                }
+              },
+              examples: {
+                "server-time-response": {
+                  summary: "Ejemplo de respuesta",
+                  value: {
+                    success: true,
+                    message: "Hora del servidor obtenida exitosamente",
+                    data: {
+                      timestamp: 1729536645123,
+                      iso: "2025-10-21T15:30:45.123Z",
+                      timezone: "America/Mexico_City",
+                      offset: -360,
+                      formatted: {
+                        date: "21/10/2025",
+                        time: "15:30:45",
+                        full: "21/10/2025, 15:30:45"
+                      }
+                    },
+                    timestamp: "2025-10-21T15:30:45.123Z"
+                  }
+                }
+              }
+            }
+          }
+        },
+        401: { description: "Token inválido o ausente" },
+        403: { description: "Acceso denegado - solo usuarios del tenant backend" },
+        500: { description: "Error del servidor" }
+      }
+    }
   }
 };
 

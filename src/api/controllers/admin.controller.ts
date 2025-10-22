@@ -166,8 +166,61 @@ async function getUserForms(req: any, res: Response) {
   }
 }
 
+// Función para obtener la hora actual del servidor (solo para usuarios backend)
+async function getServerTime(req: any, res: Response) {
+  const span = trace.getActiveSpan();
+  span?.setAttribute('operation', 'admin.getServerTime');
+  span?.setAttribute('admin.user', req.user?.username);
+
+  try {
+    span?.addEvent('Obteniendo hora actual del servidor');
+
+    const now = new Date();
+    const serverTime = {
+      timestamp: now.getTime(), // Unix timestamp en milisegundos
+      iso: now.toISOString(), // Formato ISO 8601
+      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone, // Zona horaria del servidor
+      offset: -now.getTimezoneOffset(), // Offset en minutos desde UTC
+      formatted: {
+        date: now.toLocaleDateString('es-MX', { 
+          year: 'numeric', 
+          month: '2-digit', 
+          day: '2-digit' 
+        }),
+        time: now.toLocaleTimeString('es-MX', { 
+          hour: '2-digit', 
+          minute: '2-digit', 
+          second: '2-digit',
+          hour12: false
+        }),
+        full: now.toLocaleString('es-MX', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false
+        })
+      }
+    };
+
+    span?.setAttribute('server.timezone', serverTime.timezone);
+    span?.addEvent('Hora del servidor obtenida exitosamente');
+
+    return res.status(200).json({
+      success: true,
+      message: 'Hora del servidor obtenida exitosamente',
+      data: serverTime,
+      timestamp: now.toISOString()
+    });
+  } catch (err: any) {
+    return handleAdminError(err, span, 'getServerTime', req, res);
+  }
+}
+
 // Exportamos las funciones
-export { getAllUsers, getUsersWithForms, getUserForms, createUserAdmin, getTopUsersByFormType, getTenantErrors, deleteUserAdmin, getStatusPageData, deleteUserById, testErrorTracking };
+export { getAllUsers, getUsersWithForms, getUserForms, createUserAdmin, getTopUsersByFormType, getTenantErrors, deleteUserAdmin, getStatusPageData, deleteUserById, testErrorTracking, getServerTime };
 
 // Obtener usuario por email/identifier y sus formularios (admin)
 export async function getUserByEmail(req: any, res: Response) {

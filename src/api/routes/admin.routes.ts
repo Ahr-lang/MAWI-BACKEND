@@ -1,6 +1,6 @@
 // src/api/routes/admin.routes.ts
 import { Router } from "express";
-import { getAllUsers, getUsersWithForms, getUserForms, getUserByEmail, createUserAdmin, getTopUsersByFormType, getTenantErrors, deleteUserAdmin, deleteUserById, getStatusPageData, testErrorTracking } from "../controllers/admin.controller";
+import { getAllUsers, getUsersWithForms, getUserForms, getUserByEmail, createUserAdmin, getTopUsersByFormType, getTenantErrors, deleteUserAdmin, deleteUserById, getStatusPageData, testErrorTracking, getServerTime } from "../controllers/admin.controller";
 import { protectAuth } from "../middlewares/protect";
 import { ensureBackendUser } from "../middlewares/common/backendAuth";
 
@@ -40,5 +40,8 @@ router.get("/:tenant/admin/status", ...adminAuth, getStatusPageData);
 
 // Ruta para probar el sistema de tracking de errores (GET /:tenant/admin/test-error)
 router.get("/:tenant/admin/test-error", ...adminAuth, testErrorTracking);
+
+// Ruta para obtener la hora actual del servidor (GET /:tenant/admin/server-time)
+router.get("/:tenant/admin/server-time", ...adminAuth, getServerTime);
 
 export default router;
