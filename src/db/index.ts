@@ -75,6 +75,8 @@ function getSequelize(tenant: string): Sequelize {
 }
 
 async function connectDB() {
+  await createDatabasesIfNotExist();
+
   for (const tenant of Object.keys(TENANTS)) {
     const maxAttempts = 5;
     let attempt = 0, connected = false;
@@ -90,7 +92,7 @@ async function connectDB() {
         const sequelize = getSequelize(tenant);
         await sequelize.authenticate();
 
-        // await sequelize.sync(); // Disabled to prevent automatic schema changes
+        await sequelize.sync(); // Create tables if they don't exist
 
         connected = true;
       } catch (err) {
@@ -106,6 +108,49 @@ async function connectDB() {
     }
   }
   console.log("[DB] Tenant connection attempts completed");
+}
+
+async function createDatabasesIfNotExist() {
+  // Wait for the database to be ready
+  await sleep(5000);
+
+  const postgresSequelize = new Sequelize('postgres', BASE_CONF.user, BASE_CONF.password, {
+    host: BASE_CONF.host,
+    port: BASE_CONF.port,
+    dialect: 'postgres',
+    ssl: BASE_CONF.ssl as any,
+    logging: false,
+  });
+
+  try {
+    await postgresSequelize.authenticate();
+    console.log('[DB] Connected to postgres system database for database creation');
+
+    for (const tenant of Object.keys(TENANTS)) {
+      const dbName = TENANTS[tenant].database;
+      try {
+        // Check if database exists
+        const result: any = await postgresSequelize.query(
+          `SELECT 1 FROM pg_database WHERE datname = '${dbName}'`,
+          { type: 'SELECT' }
+        );
+        
+        if (result.length === 0) {
+          // Database doesn't exist, create it
+          await postgresSequelize.query(`CREATE DATABASE "${dbName}"`);
+          console.log(`[DB] Created database "${dbName}" for tenant "${tenant}"`);
+        } else {
+          console.log(`[DB] Database "${dbName}" already exists for tenant "${tenant}"`);
+        }
+      } catch (error) {
+        console.error(`[DB] Error ensuring database "${dbName}" exists:`, error);
+      }
+    }
+  } catch (error) {
+    console.error('[DB] Error creating databases:', error);
+  } finally {
+    await postgresSequelize.close();
+  }
 }
 
 export { getPool, getSequelize, connectDB, TENANTS };
