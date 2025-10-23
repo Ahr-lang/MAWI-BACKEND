@@ -1,4 +1,4 @@
-import { initBackModels } from "../models/back";
+import { initBackModels } from "../models/back/index";
 
 export const initBack = async () => {
   try {

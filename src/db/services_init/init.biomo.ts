@@ -1,4 +1,4 @@
-import { initBiomoModels } from "../models/biomo";
+import { initBiomoModels } from "../models/biomo/index";
 
 export const initBiomo = async () => {
   try {

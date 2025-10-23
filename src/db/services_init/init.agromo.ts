@@ -1,4 +1,4 @@
-import { initAgromoModels } from "../models/agromo";
+import { initAgromoModels } from "../models/agromo/index";
 
 export const initAgromo = async () => {
   try {

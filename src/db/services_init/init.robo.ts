@@ -1,4 +1,4 @@
-import { initRoboModels } from "../models/robo";
+import { initRoboModels } from "../models/robo/index";
 
 export const initRobo = async () => {
   try {
