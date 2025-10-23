@@ -46,13 +46,13 @@ export function trackApplicationError(
 }
 
 /**
- * Middleware to track HTTP errors (5xx responses)
+ * Middleware to track HTTP errors (4xx and 5xx responses)
  */
 export function trackHttpError(req: Request, res: Response, next: NextFunction) {
   // Track when response finishes
   res.on('finish', () => {
-    // Only track 5xx errors
-    if (res.statusCode >= 500) {
+    // Track both 4xx and 5xx errors
+    if (res.statusCode >= 400) {
       const tenant = (req as any).tenant || 'unknown';
       const userId = (req as any).user?.id?.toString();
       const userAgent = req.get('User-Agent');
